@@ -1,4 +1,4 @@
-import React from 'react';
+seimport React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import NavigationBar from './NavigationBar'; // import your NavigationBar component
 
@@ -28,3 +28,20 @@ describe('NavigationBar component', () => {
     // Add expectations for navigation to the Contact page
   });
 });
+
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.js$/, // Apply this rule to JavaScript files
+        exclude: /node_modules/, // Exclude the node_modules directory
+        use: {
+          loader: 'babel-loader', // Use babel-loader for these files
+          options: {
+            presets: ['@babel/preset-env', '@babel/preset-react'] // Use these presets
+          }
+        }
+      }
+    ]
+  }
+};
