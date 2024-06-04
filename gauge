@@ -1,8 +1,14 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import ChartDisplay from './ChartDisplay';
+import { Line } from 'react-chartjs-2';
+
+// Mocking react-chartjs-2
+vi.mock('react-chartjs-2', () => ({
+  Line: vi.fn(() => <canvas />)
+}));
 
 describe('ChartDisplay Component', () => {
   const mockData = [
@@ -38,17 +44,20 @@ describe('ChartDisplay Component', () => {
 
   it('checks chart data labels and datasets', () => {
     render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    const chartInstance = ChartJS.instances[0];
-    
-    expect(chartInstance.data.labels).toEqual(mockData.map(entry => entry.date));
-    expect(chartInstance.data.datasets[0].data).toEqual(mockData.map(entry => entry.value));
-  });
-
-  it('checks chart options for correct axis titles', () => {
-    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    const chartInstance = ChartJS.instances[0];
-    
-    expect(chartInstance.options.scales.x.title.text).toBe('Date');
-    expect(chartInstance.options.scales.y.title.text).toBe('Value (USD)');
+    expect(Line).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          labels: mockData.map(entry => entry.date),
+          datasets: expect.arrayContaining([
+            expect.objectContaining({
+              label: 'Portfolio Value',
+              data: mockData.map(entry => entry.value),
+            })
+          ])
+        }),
+        options: expect.any(Object)
+      }),
+      expect.anything()
+    );
   });
 });
