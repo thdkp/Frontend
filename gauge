@@ -2,29 +2,40 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect } from 'vitest';
-import AssetClass from './AssetClass';
+import News from './News';
 
-describe('AssetClass Component', () => {
-  const testData = {
-    realEstate: 40,
-    commodities: 30,
-    crypto: 20,
-    others: 10,
-  };
-
-  it('renders the Asset Class title', () => {
-    render(<AssetClass data={testData} />);
-    expect(screen.getByText(/Asset Class/i)).toBeInTheDocument();
+describe('News Component', () => {
+  it('renders the News title', () => {
+    render(<News />);
+    expect(screen.getByText(/Today's News and Events/i)).toBeInTheDocument();
   });
 
-  it('renders the description', () => {
-    render(<AssetClass data={testData} />);
-    expect(screen.getByText(/Asset class distribution in your portfolio/i)).toBeInTheDocument();
+  it('renders all news items', () => {
+    render(<News />);
+    const newsItems = screen.getAllByRole('listitem');
+    expect(newsItems).toHaveLength(5);
   });
 
-  it('renders the Doughnut chart', () => {
-    render(<AssetClass data={testData} />);
-    const canvas = screen.getByRole('img');
-    expect(canvas).toBeInTheDocument();
+  it('renders the "See All" button', () => {
+    render(<News />);
+    expect(screen.getByRole('button', { name: /See All/i })).toBeInTheDocument();
+  });
+
+  it('renders correct news titles and sources', () => {
+    render(<News />);
+    expect(screen.getByText("Feud over Podi's")).toBeInTheDocument();
+    expect(screen.getByText("1 hour ago - Business Today")).toBeInTheDocument();
+
+    expect(screen.getByText("Dodio Flight From Chemalates Emergency")).toBeInTheDocument();
+    expect(screen.getByText("1 hour ago - News 18")).toBeInTheDocument();
+
+    expect(screen.getByText("Auto Sales In May 2024 Live SUV")).toBeInTheDocument();
+    expect(screen.getByText("2 hours ago - Bloomberg Quint")).toBeInTheDocument();
+
+    expect(screen.getByText("Ask Profit Cummins India")).toBeInTheDocument();
+    expect(screen.getByText("3 hours ago - Bloomberg Quint")).toBeInTheDocument();
+
+    expect(screen.getByText("Thirty In Technical Charts Hanging and the HT")).toBeInTheDocument();
+    expect(screen.getByText("1 hour ago - Business Today")).toBeInTheDocument();
   });
 });
