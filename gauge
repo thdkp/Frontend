@@ -2,40 +2,40 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect } from 'vitest';
-import News from './News';
+import MarketSectors from './MarketSectors';
 
-describe('News Component', () => {
-  it('renders the News title', () => {
-    render(<News />);
-    expect(screen.getByText(/Today's News and Events/i)).toBeInTheDocument();
+describe('MarketSectors Component', () => {
+  it('renders the Market and Sectors title', () => {
+    render(<MarketSectors />);
+    expect(screen.getByText(/Market and Sectors/i)).toBeInTheDocument();
   });
 
-  it('renders all news items', () => {
-    render(<News />);
-    const newsItems = screen.getAllByRole('listitem');
-    expect(newsItems).toHaveLength(5);
+  it('renders the "See All" link', () => {
+    render(<MarketSectors />);
+    expect(screen.getByText(/See All/i)).toBeInTheDocument();
   });
 
-  it('renders the "See All" button', () => {
-    render(<News />);
-    expect(screen.getByRole('button', { name: /See All/i })).toBeInTheDocument();
+  it('renders all market sectors', () => {
+    render(<MarketSectors />);
+    const sectorItems = screen.getAllByRole('listitem');
+    expect(sectorItems).toHaveLength(9);
   });
 
-  it('renders correct news titles and sources', () => {
-    render(<News />);
-    expect(screen.getByText("Feud over Podi's")).toBeInTheDocument();
-    expect(screen.getByText("1 hour ago - Business Today")).toBeInTheDocument();
+  it('renders correct market sector names and values', () => {
+    render(<MarketSectors />);
+    
+    expect(screen.getByText("NIFTY 50")).toBeInTheDocument();
+    expect(screen.getByText("22558.40")).toBeInTheDocument();
+    expect(screen.getByText("▲8.27")).toBeInTheDocument();
 
-    expect(screen.getByText("Dodio Flight From Chemalates Emergency")).toBeInTheDocument();
-    expect(screen.getByText("1 hour ago - News 18")).toBeInTheDocument();
+    expect(screen.getByText("USD")).toBeInTheDocument();
+    expect(screen.getByText("83.52")).toBeInTheDocument();
+    expect(screen.getByText("▲0.17")).toBeInTheDocument();
 
-    expect(screen.getByText("Auto Sales In May 2024 Live SUV")).toBeInTheDocument();
-    expect(screen.getByText("2 hours ago - Bloomberg Quint")).toBeInTheDocument();
+    expect(screen.getByText("Gold")).toBeInTheDocument();
+    expect(screen.getByText("7385.95")).toBeInTheDocument();
+    expect(screen.getByText("▼8.07")).toBeInTheDocument();
 
-    expect(screen.getByText("Ask Profit Cummins India")).toBeInTheDocument();
-    expect(screen.getByText("3 hours ago - Bloomberg Quint")).toBeInTheDocument();
-
-    expect(screen.getByText("Thirty In Technical Charts Hanging and the HT")).toBeInTheDocument();
-    expect(screen.getByText("1 hour ago - Business Today")).toBeInTheDocument();
+    // Add more checks for other items if needed
   });
 });
