@@ -1,82 +1,30 @@
-.meter-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.gauge {
-  position: relative;
-  width: 300px;
-  height: 150px;
-  background: linear-gradient(to bottom, #ffffff 50%, transparent 50%);
-  border-radius: 150px 150px 0 0;
-  overflow: hidden;
-}
-
-.gauge-segment {
-  position: absolute;
-  width: 50%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1rem;
-  font-weight: bold;
-  color: #fff;
-}
-
-.high {
-  background-color: #ff0000;
-  transform: rotate(0deg);
-  transform-origin: 100% 100%;
-}
-
-.medium {
-  background-color: #ff8000;
-  transform: rotate(45deg);
-  transform-origin: 100% 100%;
-}
-
-.low {
-  background-color: #ffff00;
-  transform: rotate(90deg);
-  transform-origin: 100% 100%;
-}
-
-.very-low {
-  background-color: #00ff00;
-  transform: rotate(135deg);
-  transform-origin: 100% 100%;
-}
-
-.needle {
-  position: absolute;
-  width: 2px;
-  height: 100%;
-  background-color: #000;
-  left: 50%;
-  transform-origin: bottom;
-  transform: rotate(45deg); /* Adjust this value to point the needle to the desired mood */
-}
-
-
 import React from 'react';
-import './MarketMoodMeter.css';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { describe, it, expect } from 'vitest';
+import AssetClass from './AssetClass';
 
-const MarketMoodMeter = () => {
-  return (
-    <div className="meter-container">
-      <div className="gauge">
-        <div className="needle"></div>
-        <div className="gauge-segment high">High</div>
-        <div className="gauge-segment medium">Medium</div>
-        <div className="gauge-segment low">Low</div>
-        <div className="gauge-segment very-low">Very Low</div>
-      </div>
-    </div>
-  );
-};
+describe('AssetClass Component', () => {
+  const testData = {
+    realEstate: 40,
+    commodities: 30,
+    crypto: 20,
+    others: 10,
+  };
 
-export default MarketMoodMeter;
+  it('renders the Asset Class title', () => {
+    render(<AssetClass data={testData} />);
+    expect(screen.getByText(/Asset Class/i)).toBeInTheDocument();
+  });
+
+  it('renders the description', () => {
+    render(<AssetClass data={testData} />);
+    expect(screen.getByText(/Asset class distribution in your portfolio/i)).toBeInTheDocument();
+  });
+
+  it('renders the Doughnut chart', () => {
+    render(<AssetClass data={testData} />);
+    const canvas = screen.getByRole('img');
+    expect(canvas).toBeInTheDocument();
+  });
+});
