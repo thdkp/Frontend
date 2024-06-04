@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi } from 'vitest';
-import AllocationView from './AllocationView';
+import BondEquity from './BondEquity';
 import { Doughnut } from 'react-chartjs-2';
 
 // Mocking react-chartjs-2
@@ -10,44 +10,37 @@ vi.mock('react-chartjs-2', () => ({
   Doughnut: vi.fn(() => <div data-testid="doughnut-chart" />)
 }));
 
-describe('AllocationView Component', () => {
+describe('BondEquity Component', () => {
   const mockData = {
-    bigTech: 25,
-    stocks: 30,
-    energy: 20,
-    ecommerce: 15,
-    funds: 10
+    bonds: 40,
+    equities: 60
   };
 
-  it('renders the Allocation View title', () => {
-    render(<AllocationView data={mockData} />);
-    expect(screen.getByText(/Allocation View/i)).toBeInTheDocument();
+  it('renders the Bond Equity title', () => {
+    render(<BondEquity data={mockData} />);
+    expect(screen.getByText(/Bond Equity/i)).toBeInTheDocument();
   });
 
-  it('renders the Big Tech allocation text', () => {
-    render(<AllocationView data={mockData} />);
-    expect(screen.getByText(/Big Tech accounts for 25% of your portfolio./i)).toBeInTheDocument();
+  it('renders the Bond Equity distribution text', () => {
+    render(<BondEquity data={mockData} />);
+    const distributionTextElement = screen.getByText(/Bond Equity distribution in your portfolio/i);
+    expect(distributionTextElement).toBeInTheDocument();
   });
 
   it('renders the Doughnut chart', () => {
-    render(<AllocationView data={mockData} />);
+    render(<BondEquity data={mockData} />);
     expect(screen.getByTestId('doughnut-chart')).toBeInTheDocument();
   });
 
-  it('renders the read more link', () => {
-    render(<AllocationView data={mockData} />);
-    expect(screen.getByText(/You can read more/i)).toBeInTheDocument();
-  });
-
   it('checks chart data labels and datasets', () => {
-    render(<AllocationView data={mockData} />);
+    render(<BondEquity data={mockData} />);
     expect(Doughnut).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          labels: ['Big Tech', 'Stocks', 'Energy', 'Ecommerce', 'Funds'],
+          labels: ['Bonds', 'Equities'],
           datasets: expect.arrayContaining([
             expect.objectContaining({
-              data: [mockData.bigTech, mockData.stocks, mockData.energy, mockData.ecommerce, mockData.funds],
+              data: [mockData.bonds, mockData.equities],
             })
           ])
         }),
