@@ -1,63 +1,17 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { describe, it, expect, vi } from 'vitest';
-import ChartDisplay from './ChartDisplay';
-import { Line } from 'react-chartjs-2';
+import { describe, it, expect } from 'vitest';
+import Loader from './Loader';
 
-// Mocking react-chartjs-2
-vi.mock('react-chartjs-2', () => ({
-  Line: vi.fn(() => <canvas />)
-}));
-
-describe('ChartDisplay Component', () => {
-  const mockData = [
-    { date: '2021-07-01', value: 1000 },
-    { date: '2021-08-01', value: 1200 },
-    { date: '2021-09-01', value: 1400 },
-  ];
-
-  const mockPortfolio = {
-    worth: 15000,
-  };
-
-  it('renders the Portfolio Performance title', () => {
-    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    expect(screen.getByText(/Portfolio Performance/i)).toBeInTheDocument();
+describe('Loader Component', () => {
+  it('renders the loading text', () => {
+    render(<Loader />);
+    expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
   });
 
-  it('renders the portfolio worth', () => {
-    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    expect(screen.getByText(`$${mockPortfolio.worth}`)).toBeInTheDocument();
-  });
-
-  it('renders the performance change text', () => {
-    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    expect(screen.getByText('+230.82% from July 2021')).toBeInTheDocument();
-  });
-
-  it('renders the Line chart', () => {
-    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    // Check if the canvas element (which is used by the chart) is present
-    expect(screen.getByRole('img')).toBeInTheDocument();
-  });
-
-  it('checks chart data labels and datasets', () => {
-    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
-    expect(Line).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          labels: mockData.map(entry => entry.date),
-          datasets: expect.arrayContaining([
-            expect.objectContaining({
-              label: 'Portfolio Value',
-              data: mockData.map(entry => entry.value),
-            })
-          ])
-        }),
-        options: expect.any(Object)
-      }),
-      expect.anything()
-    );
+  it('applies the correct CSS class', () => {
+    render(<Loader />);
+    expect(screen.getByText(/Loading.../i)).toHaveClass('text-center');
   });
 });
