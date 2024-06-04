@@ -2,75 +2,53 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect } from 'vitest';
-import MarketSectors from './MarketSectors';
+import ChartDisplay from './ChartDisplay';
 
-describe('MarketSectors Component', () => {
-  const testData = [
-    { name: "NIFTY 50", value: 22558.40, change: 8.27, isPositive: true },
-    { name: "USD", value: 83.52, change: 0.17, isPositive: true },
-    { name: "Gold", value: 7385.95, change: -8.07, isPositive: false },
-    { name: "NIFTY 100 Largecap", value: 23538.60, change: 13.45, isPositive: true },
-    { name: "NIFTY 100 Midcap", value: 51735.95, change: 23.75, isPositive: true },
-    { name: "NIFTY 100 Smallcap", value: 16718.25, change: 12.64, isPositive: true },
-    { name: "NIFTY Bank", value: 48982.48, change: 8.62, isPositive: true },
-    { name: "NIFTY IT", value: 32458.85, change: -1.06, isPositive: false },
-    { name: "NIFTY Pharma", value: 18040.70, change: -0.04, isPositive: false },
+describe('ChartDisplay Component', () => {
+  const mockData = [
+    { date: '2021-07-01', value: 1000 },
+    { date: '2021-08-01', value: 1200 },
+    { date: '2021-09-01', value: 1400 },
   ];
 
-  it('renders the Market and Sectors title', () => {
-    render(<MarketSectors />);
-    expect(screen.getByText(/Market and Sectors/i)).toBeInTheDocument();
+  const mockPortfolio = {
+    worth: 15000,
+  };
+
+  it('renders the Portfolio Performance title', () => {
+    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
+    expect(screen.getByText(/Portfolio Performance/i)).toBeInTheDocument();
   });
 
-  it('renders the "See All" link', () => {
-    render(<MarketSectors />);
-    expect(screen.getByText(/See All/i)).toBeInTheDocument();
+  it('renders the portfolio worth', () => {
+    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
+    expect(screen.getByText(`$${mockPortfolio.worth}`)).toBeInTheDocument();
   });
 
-  it('renders all market sector items', () => {
-    render(<MarketSectors />);
-    const sectorItems = screen.getAllByText(/^[\s\S]*$/); // Gets all elements with text
-    expect(sectorItems).toHaveLength(9 * 2); // Each sector has two elements (name and value)
+  it('renders the performance change text', () => {
+    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
+    expect(screen.getByText('+230.82% from July 2021')).toBeInTheDocument();
   });
 
-  it('renders correct market sector names, values, and changes', () => {
-    render(<MarketSectors />);
-
-    testData.forEach(item => {
-      expect(screen.getByText(item.name)).toBeInTheDocument();
-      expect(screen.getByText(item.value.toFixed(2))).toBeInTheDocument();
-      const changeText = `${item.change > 0 ? '▲' : '▼'}${item.change.toFixed(2)}`;
-      expect(screen.getByText(changeText)).toBeInTheDocument();
-    });
+  it('renders the Line chart', () => {
+    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
+    // Check if the canvas element (which is used by the chart) is present
+    expect(screen.getByRole('img')).toBeInTheDocument();
   });
 
-  it('renders correct styles for positive and negative changes', () => {
-    render(<MarketSectors />);
-
-    testData.forEach(item => {
-      const changeElement = screen.getByText(`${item.change > 0 ? '▲' : '▼'}${item.change.toFixed(2)}`);
-      const expectedClass = item.isPositive ? 'text-green-500' : 'text-red-500';
-      expect(changeElement).toHaveClass(expectedClass);
-    });
-  });
-
-  it('checks the structure of each market sector item', () => {
-    render(<MarketSectors />);
+  it('checks chart data labels and datasets', () => {
+    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
+    const chartInstance = ChartJS.instances[0];
     
-    testData.forEach(item => {
-      const nameElement = screen.getByText(item.name);
-      const valueElement = screen.getByText(item.value.toFixed(2));
-      const changeElement = screen.getByText(`${item.change > 0 ? '▲' : '▼'}${item.change.toFixed(2)}`);
-      
-      expect(nameElement.closest('div')).toHaveClass('flex justify-between items-center p-4 bg-gray-100 rounded-lg');
-      expect(nameElement.closest('div')).toContainElement(valueElement);
-      expect(nameElement.closest('div')).toContainElement(changeElement);
-    });
+    expect(chartInstance.data.labels).toEqual(mockData.map(entry => entry.date));
+    expect(chartInstance.data.datasets[0].data).toEqual(mockData.map(entry => entry.value));
   });
 
-  it('renders the grid structure correctly', () => {
-    render(<MarketSectors />);
-    const gridElement = screen.getByRole('grid');
-    expect(gridElement).toHaveClass('grid grid-cols-3 gap-4');
+  it('checks chart options for correct axis titles', () => {
+    render(<ChartDisplay data={mockData} portfolio={mockPortfolio} />);
+    const chartInstance = ChartJS.instances[0];
+    
+    expect(chartInstance.options.scales.x.title.text).toBe('Date');
+    expect(chartInstance.options.scales.y.title.text).toBe('Value (USD)');
   });
 });
