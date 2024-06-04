@@ -1,17 +1,58 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { describe, it, expect } from 'vitest';
-import Loader from './Loader';
+import { describe, it, expect, vi } from 'vitest';
+import AllocationView from './AllocationView';
+import { Doughnut } from 'react-chartjs-2';
 
-describe('Loader Component', () => {
-  it('renders the loading text', () => {
-    render(<Loader />);
-    expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
+// Mocking react-chartjs-2
+vi.mock('react-chartjs-2', () => ({
+  Doughnut: vi.fn(() => <canvas />)
+}));
+
+describe('AllocationView Component', () => {
+  const mockData = {
+    bigTech: 25,
+    stocks: 30,
+    energy: 20,
+    ecommerce: 15,
+    funds: 10
+  };
+
+  it('renders the Allocation View title', () => {
+    render(<AllocationView data={mockData} />);
+    expect(screen.getByText(/Allocation View/i)).toBeInTheDocument();
   });
 
-  it('applies the correct CSS class', () => {
-    render(<Loader />);
-    expect(screen.getByText(/Loading.../i)).toHaveClass('text-center');
+  it('renders the Big Tech allocation text', () => {
+    render(<AllocationView data={mockData} />);
+    expect(screen.getByText(/Big Tech accounts for 25% of your portfolio./i)).toBeInTheDocument();
+  });
+
+  it('renders the Doughnut chart', () => {
+    render(<AllocationView data={mockData} />);
+    expect(screen.getByRole('img')).toBeInTheDocument();
+  });
+
+  it('renders the read more link', () => {
+    render(<AllocationView data={mockData} />);
+    expect(screen.getByText(/You can read more/i)).toBeInTheDocument();
+  });
+
+  it('checks chart data labels and datasets', () => {
+    render(<AllocationView data={mockData} />);
+    expect(Doughnut).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          labels: ['Big Tech', 'Stocks', 'Energy', 'Ecommerce', 'Funds'],
+          datasets: expect.arrayContaining([
+            expect.objectContaining({
+              data: [mockData.bigTech, mockData.stocks, mockData.energy, mockData.ecommerce, mockData.funds],
+            })
+          ])
+        }),
+      }),
+      expect.anything()
+    );
   });
 });
