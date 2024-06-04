@@ -7,7 +7,7 @@ import { Doughnut } from 'react-chartjs-2';
 
 // Mocking react-chartjs-2
 vi.mock('react-chartjs-2', () => ({
-  Doughnut: vi.fn(() => <canvas />)
+  Doughnut: vi.fn(() => <div data-testid="doughnut-chart" />)
 }));
 
 describe('AllocationView Component', () => {
@@ -31,7 +31,7 @@ describe('AllocationView Component', () => {
 
   it('renders the Doughnut chart', () => {
     render(<AllocationView data={mockData} />);
-    expect(screen.getByRole('img')).toBeInTheDocument();
+    expect(screen.getByTestId('doughnut-chart')).toBeInTheDocument();
   });
 
   it('renders the read more link', () => {
