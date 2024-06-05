@@ -1,35 +1,88 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import PortfolioDiversity from './PortfolioDiversity';
+import PortfolioTable from './PortfolioTable';
+import { BrowserRouter as Router } from 'react-router-dom';
 
-const mockPortfolio = {
-  allocation: { bigTech: 20, stocks: 30, energy: 25, ecommerce: 15, funds: 10 },
-  bondEquity: { bonds: 60, equities: 40 },
-  assetClass: { realEstate: 10, commodities: 20, crypto: 30, others: 40 }
-};
+const mockPortfolios = [
+  {
+    name: 'Portfolio A',
+    profitLoss: '+5000',
+    invested: '10000',
+    worth: '15000',
+    allocation: { bigTech: 20, stocks: 30, energy: 25, ecommerce: 15, funds: 10 },
+    bondEquity: { bonds: 60, equities: 40 },
+    assetClass: { realEstate: 10, commodities: 20, crypto: 30, others: 40 }
+  },
+  {
+    name: 'Portfolio B',
+    profitLoss: '-2000',
+    invested: '8000',
+    worth: '6000',
+    allocation: { bigTech: 25, stocks: 25, energy: 20, ecommerce: 20, funds: 10 },
+    bondEquity: { bonds: 50, equities: 50 },
+    assetClass: { realEstate: 15, commodities: 15, crypto: 35, others: 35 }
+  }
+];
 
-describe('PortfolioDiversity Component', () => {
-  it('renders AllocationView by default', () => {
-    render(<PortfolioDiversity portfolio={mockPortfolio} />);
-    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+describe('PortfolioTable Component', () => {
+  it('renders PortfolioTable with portfolios', () => {
+    render(
+      <Router>
+        <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+      </Router>
+    );
+    
+    const heading = screen.getByRole('heading', { name: /portfolio table/i });
+    expect(heading).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('Search by name');
+    expect(searchInput).toBeInTheDocument();
+
+    const portfolioRows = screen.getAllByRole('row');
+    expect(portfolioRows).toHaveLength(mockPortfolios.length + 1); // +1 for the header row
   });
 
-  it('renders BondEquity view when button is clicked', () => {
-    render(<PortfolioDiversity portfolio={mockPortfolio} />);
-    fireEvent.click(screen.getByText('Bond Equity'));
-    expect(screen.getByText('Bond Equity distribution in your portfolio.')).toBeInTheDocument();
+  it('filters portfolios based on search query', () => {
+    render(
+      <Router>
+        <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+      </Router>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Search by name');
+    fireEvent.change(searchInput, { target: { value: 'B' } });
+
+    const portfolioRows = screen.getAllByRole('row');
+    expect(portfolioRows).toHaveLength(2); // +1 for the header row, 1 for Portfolio B
   });
 
-  it('renders AssetClass view when button is clicked', () => {
-    render(<PortfolioDiversity portfolio={mockPortfolio} />);
-    fireEvent.click(screen.getByText('Asset Class'));
-    expect(screen.getByText('Asset Class distribution in your portfolio.')).toBeInTheDocument();
+  it('expands portfolio details when clicked', () => {
+    render(
+      <Router>
+        <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+      </Router>
+    );
+
+    const firstPortfolio = screen.getByText('Portfolio A');
+    fireEvent.click(firstPortfolio);
+
+    const summaryText = screen.getByText(/summary for portfolio a:/i);
+    expect(summaryText).toBeInTheDocument();
   });
 
-  it('renders AllocationView view when button is clicked', () => {
-    render(<PortfolioDiversity portfolio={mockPortfolio} />);
-    fireEvent.click(screen.getByText('Allocation View'));
-    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+  it('collapses portfolio details when clicked again', () => {
+    render(
+      <Router>
+        <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+      </Router>
+    );
+
+    const firstPortfolio = screen.getByText('Portfolio A');
+    fireEvent.click(firstPortfolio);
+    fireEvent.click(firstPortfolio);
+
+    const summaryText = screen.queryByText(/summary for portfolio a:/i);
+    expect(summaryText).not.toBeInTheDocument();
   });
 });
