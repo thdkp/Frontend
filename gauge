@@ -1,58 +1,35 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { BrowserRouter as Router } from 'react-router-dom';
-import GetStarted from './GetStarted';
+import PortfolioDiversity from './PortfolioDiversity';
 
-describe('GetStarted Component', () => {
-  it('renders the Get Started title', () => {
-    render(
-      <Router>
-        <GetStarted />
-      </Router>
-    );
-    expect(screen.getByText(/Get Started/i)).toBeInTheDocument();
+const mockPortfolio = {
+  allocation: { bigTech: 20, stocks: 30, energy: 25, ecommerce: 15, funds: 10 },
+  bondEquity: { bonds: 60, equities: 40 },
+  assetClass: { realEstate: 10, commodities: 20, crypto: 30, others: 40 }
+};
+
+describe('PortfolioDiversity Component', () => {
+  it('renders AllocationView by default', () => {
+    render(<PortfolioDiversity portfolio={mockPortfolio} />);
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
   });
 
-  it('renders the Track your portfolio subtitle', () => {
-    render(
-      <Router>
-        <GetStarted />
-      </Router>
-    );
-    expect(screen.getByText(/Track your portfolio/i)).toBeInTheDocument();
+  it('renders BondEquity view when button is clicked', () => {
+    render(<PortfolioDiversity portfolio={mockPortfolio} />);
+    fireEvent.click(screen.getByText('Bond Equity'));
+    expect(screen.getByText('Bond Equity distribution in your portfolio.')).toBeInTheDocument();
   });
 
-  it('renders the description', () => {
-    render(
-      <Router>
-        <GetStarted />
-      </Router>
-    );
-    expect(screen.getByText(/Have all your portfolios in one place/i)).toBeInTheDocument();
+  it('renders AssetClass view when button is clicked', () => {
+    render(<PortfolioDiversity portfolio={mockPortfolio} />);
+    fireEvent.click(screen.getByText('Asset Class'));
+    expect(screen.getByText('Asset Class distribution in your portfolio.')).toBeInTheDocument();
   });
 
-  it('renders all list items correctly', () => {
-    render(
-      <Router>
-        <GetStarted />
-      </Router>
-    );
-    const listItems = screen.getAllByRole('listitem');
-    expect(listItems).toHaveLength(3);
-    expect(listItems[0]).toHaveTextContent(/Create custom portfolio/i);
-    expect(listItems[1]).toHaveTextContent(/Use multiple visualization tools/i);
-    expect(listItems[2]).toHaveTextContent(/Rebalance your portfolios/i);
-  });
-
-  it('renders the Start button and checks the link', () => {
-    render(
-      <Router>
-        <GetStarted />
-      </Router>
-    );
-    const startButton = screen.getByRole('button', { name: /Start/i });
-    expect(startButton).toBeInTheDocument();
-    expect(startButton.closest('a')).toHaveAttribute('href', './signin');
+  it('renders AllocationView view when button is clicked', () => {
+    render(<PortfolioDiversity portfolio={mockPortfolio} />);
+    fireEvent.click(screen.getByText('Allocation View'));
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
   });
 });
