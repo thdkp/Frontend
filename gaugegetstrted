@@ -1,0 +1,61 @@
+import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import GetStarted from './GetStarted';
+
+describe('GetStarted Component', () => {
+  it('renders get started component with correct content', () => {
+    render(
+      <BrowserRouter>
+        <GetStarted />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Get started')).toBeInTheDocument();
+    expect(screen.getByText('Track your portfolio')).toBeInTheDocument();
+    expect(screen.getByText('Have all your portfolios in one place!')).toBeInTheDocument();
+    expect(screen.getByText('🔗 Create custom portfolios in a few clicks')).toBeInTheDocument();
+    expect(screen.getByText('📈 Use multiple visualization tools to get a better understanding of your portfolios')).toBeInTheDocument();
+    expect(screen.getByText('⚠️ Rebalance your portfolios on a single click')).toBeInTheDocument();
+    expect(screen.getByText('Start')).toBeInTheDocument();
+  });
+
+  it('renders with correct CSS classes applied', () => {
+    render(
+      <BrowserRouter>
+        <GetStarted />
+      </BrowserRouter>
+    );
+
+    const getStartedDiv = screen.getByRole('div');
+    expect(getStartedDiv).toHaveClass('bg-white');
+    expect(getStartedDiv).toHaveClass('p-6');
+    expect(getStartedDiv).toHaveClass('rounded-lg');
+    expect(getStartedDiv).toHaveClass('shadow-md');
+    expect(getStartedDiv).toHaveClass('mb-6');
+
+    const headingElements = screen.getAllByRole('heading');
+    headingElements.forEach((heading) => {
+      expect(heading).toHaveClass('text-2xl');
+      expect(heading).toHaveClass('font-semibold');
+      expect(heading).toHaveClass('mb-4');
+    });
+
+    const paragraphElement = screen.getByRole('paragraph');
+    expect(paragraphElement).toHaveClass('text-gray-600');
+    expect(paragraphElement).toHaveClass('mb-6');
+
+    const listItems = screen.getAllByRole('listitem');
+    listItems.forEach((item) => {
+      expect(item).toHaveClass('flex');
+      expect(item).toHaveClass('items-center');
+      expect(item).toHaveClass('text-gray-700');
+    });
+
+    const linkElement = screen.getByRole('link');
+    expect(linkElement).toHaveClass('bg-black');
+    expect(linkElement).toHaveClass('text-white');
+    expect(linkElement).toHaveClass('w-full');
+    expect(linkElement).toHaveClass('py-2');
+    expect(linkElement).toHaveClass('rounded');
+  });
+});
