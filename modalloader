@@ -1,0 +1,35 @@
+import { render, screen } from '@testing-library/react';
+import ModalLoader from './ModalLoader';
+
+describe('ModalLoader Component', () => {
+  it('renders modal loader component with correct content', () => {
+    render(<ModalLoader />);
+
+    const modalLoaderDiv = screen.getByRole('div');
+    expect(modalLoaderDiv).toBeInTheDocument();
+    expect(modalLoaderDiv).toHaveClass('fixed');
+    expect(modalLoaderDiv).toHaveClass('inset-0');
+    expect(modalLoaderDiv).toHaveClass('flex');
+    expect(modalLoaderDiv).toHaveClass('items-center');
+    expect(modalLoaderDiv).toHaveClass('justify-center');
+    expect(modalLoaderDiv).toHaveClass('bg-black');
+    expect(modalLoaderDiv).toHaveClass('bg-opacity-50');
+    expect(modalLoaderDiv).toHaveClass('z-50');
+
+    const loaderDiv = screen.getByRole('div', { name: 'loader' });
+    expect(loaderDiv).toBeInTheDocument();
+    expect(loaderDiv).toHaveClass('flex');
+    expect(loaderDiv).toHaveClass('items-center');
+    expect(loaderDiv).toHaveClass('justify-center');
+
+    const spinnerDiv = screen.getByRole('div', { name: 'spinner' });
+    expect(spinnerDiv).toBeInTheDocument();
+    expect(spinnerDiv).toHaveClass('w-16');
+    expect(spinnerDiv).toHaveClass('h-16');
+    expect(spinnerDiv).toHaveClass('border-4');
+    expect(spinnerDiv).toHaveClass('border-dashed');
+    expect(spinnerDiv).toHaveClass('rounded-full');
+    expect(spinnerDiv).toHaveClass('animate-spin');
+    expect(spinnerDiv).toHaveClass('border-blue-500');
+  });
+});
