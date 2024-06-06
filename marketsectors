@@ -1,0 +1,61 @@
+import { render, screen } from '@testing-library/react';
+import MarketSectors from './MarketSectors';
+
+const dummyData = [
+  { name: 'NIFTY 50', value: 22550.40, change: 0.27, isPositive: true },
+  { name: 'USD/INR', value: 83.52, change: 0.19, isPositive: true },
+  { name: 'Gold', value: 7385.95, change: -0.07, isPositive: false },
+  { name: 'NIFTY 100 Largecap', value: 23538.60, change: 0.31, isPositive: true },
+  { name: 'NIFTY 100 Midcap', value: 51735.95, change: 0.60, isPositive: true },
+  { name: 'NIFTY 100 Smallcap', value: 16710.25, change: 0.59, isPositive: true },
+  { name: 'NIFTY Bank', value: 48982.40, change: 0.62, isPositive: true },
+  { name: 'NIFTY IT', value: 32458.85, change: -1.06, isPositive: false },
+  { name: 'NIFTY Pharma', value: 18849.70, change: -0.64, isPositive: false },
+];
+
+describe('MarketSectors Component', () => {
+  it('renders market sectors component with correct content', () => {
+    render(<MarketSectors />);
+
+    expect(screen.getByText('Market and sectors')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'See All' })).toHaveLength(1);
+
+    dummyData.forEach((item) => {
+      expect(screen.getByText(item.name)).toBeInTheDocument();
+      expect(screen.getByText(item.value.toFixed(2))).toBeInTheDocument();
+      expect(screen.getByText(`${item.change > 0 ? '▲' : '▼'} ${item.change.toFixed(2)}%`)).toBeInTheDocument();
+    });
+  });
+
+  it('renders with correct CSS classes applied', () => {
+    render(<MarketSectors />);
+
+    const marketSectorsDiv = screen.getByRole('div');
+    expect(marketSectorsDiv).toHaveClass('bg-white');
+    expect(marketSectorsDiv).toHaveClass('p-6');
+    expect(marketSectorsDiv).toHaveClass('rounded-lg');
+    expect(marketSectorsDiv).toHaveClass('shadow-md');
+    expect(marketSectorsDiv).toHaveClass('w-full');
+    expect(marketSectorsDiv).toHaveClass('max-w-6xl');
+    expect(marketSectorsDiv).toHaveClass('mx-auto');
+
+    expect(screen.getAllByRole('div', { name: 'flex justify-between items-center mb-4' })).toHaveLength(1);
+
+    const gridDivs = screen.getAllByRole('div', { name: 'grid grid-cols-3 gap-4' });
+    gridDivs.forEach((div) => {
+      expect(div).toHaveClass('grid');
+      expect(div).toHaveClass('grid-cols-3');
+      expect(div).toHaveClass('gap-4');
+    });
+
+    const itemDivs = screen.getAllByRole('div', { name: 'flex justify-between items-center p-4 bg-gray-50 rounded' });
+    itemDivs.forEach((div) => {
+      expect(div).toHaveClass('flex');
+      expect(div).toHaveClass('justify-between');
+      expect(div).toHaveClass('items-center');
+      expect(div).toHaveClass('p-4');
+      expect(div).toHaveClass('bg-gray-50');
+      expect(div).toHaveClass('rounded');
+    });
+  });
+});
