@@ -1,0 +1,56 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import SignUp from './SignUp';
+import { BrowserRouter as Router } from 'react-router-dom';
+
+describe('SignUp Component', () => {
+  it('renders SignUp component correctly', () => {
+    render(
+      <Router>
+        <SignUp />
+      </Router>
+    );
+
+    // Checking if main elements are present
+    const heading = screen.getByRole('heading', { name: /create account/i });
+    expect(heading).toBeInTheDocument();
+
+    const subheading = screen.getByText(/please fill in the details to create your account/i);
+    expect(subheading).toBeInTheDocument();
+
+    // Checking input fields
+    const firstNameInput = screen.getByPlaceholderText('Enter your first name');
+    expect(firstNameInput).toBeInTheDocument();
+
+    const lastNameInput = screen.getByPlaceholderText('Enter your last name');
+    expect(lastNameInput).toBeInTheDocument();
+
+    const dobInput = screen.getByPlaceholderText('Enter your date of birth');
+    expect(dobInput).toBeInTheDocument();
+
+    const emailInput = screen.getByPlaceholderText('Enter your email');
+    expect(emailInput).toBeInTheDocument();
+
+    const passwordInput = screen.getByPlaceholderText('Enter your password');
+    expect(passwordInput).toBeInTheDocument();
+
+    const signUpButton = screen.getByRole('button', { name: /sign up/i });
+    expect(signUpButton).toBeInTheDocument();
+
+    const signInButton = screen.getByRole('button', { name: /sign in/i });
+    expect(signInButton).toBeInTheDocument();
+  });
+
+  it('updates input values on change', () => {
+    render(
+      <Router>
+        <SignUp />
+      </Router>
+    );
+
+    const firstNameInput = screen.getByPlaceholderText('Enter your first name');
+    fireEvent.change(firstNameInput, { target: { value: 'John' } });
+    expect(firstNameInput.value).toBe('John');
+
+    const lastNameInput = screen.getByPlaceholderText('Enter your last name');
