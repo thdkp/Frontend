@@ -1,0 +1,27 @@
+import React from 'react';
+import { render } from '@testing-library/react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import AuthError from './AuthError';
+
+test('renders AuthError component', () => {
+  const { getByText } = render(
+    <Router>
+      <AuthError />
+    </Router>
+  );
+
+  expect(getByText('Oops!')).toBeInTheDocument();
+  expect(getByText('Please')).toBeInTheDocument();
+  expect(getByText('Sign In')).toBeInTheDocument();
+});
+
+test('Sign In link points to /signin', () => {
+  const { getByText } = render(
+    <Router>
+      <AuthError />
+    </Router>
+  );
+
+  const link = getByText('Sign In');
+  expect(link).toHaveAttribute('href', '/signin');
+});
