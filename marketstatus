@@ -1,0 +1,71 @@
+import { render, screen } from '@testing-library/react';
+import MarketStatus from './MarketStatus';
+
+const dummyData = {
+  nifty50: 22530.70,
+  sensex: 73961.31,
+  fearIndex: "Extreme Fear",
+  weeklyStatus: ["Fear", "No Fear", "Extreme Fear", "Fear", "Fear"],
+};
+
+describe('MarketStatus Component', () => {
+  it('renders market status component with correct content', () => {
+    render(<MarketStatus />);
+
+    expect(screen.getByText('NIFTY 50')).toBeInTheDocument();
+    expect(screen.getByText(dummyData.nifty50.toFixed(2))).toBeInTheDocument();
+    expect(screen.getByText('SENSEX')).toBeInTheDocument();
+    expect(screen.getByText(dummyData.sensex.toFixed(2))).toBeInTheDocument();
+
+    dummyData.weeklyStatus.forEach((status, index) => {
+      expect(screen.getByTestId(`pie-color-${index}`)).toBeInTheDocument();
+      expect(screen.getByText(["MON", "TUE", "WED", "THU", "FRI"][index])).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('The market is in')).toBeInTheDocument();
+    expect(screen.getByText('Extreme Fear zone')).toBeInTheDocument();
+  });
+
+  it('renders with correct CSS classes applied', () => {
+    render(<MarketStatus />);
+
+    const marketStatusDiv = screen.getByRole('div');
+    expect(marketStatusDiv).toHaveClass('bg-gray-900');
+    expect(marketStatusDiv).toHaveClass('p-6');
+    expect(marketStatusDiv).toHaveClass('text-white');
+    expect(marketStatusDiv).toHaveClass('flex');
+    expect(marketStatusDiv).toHaveClass('flex-col');
+    expect(marketStatusDiv).toHaveClass('items-center');
+    expect(marketStatusDiv).toHaveClass('w-full');
+
+    const childDivs = screen.getAllByRole('div');
+    childDivs.forEach((div) => {
+      expect(div).toHaveClass('flex');
+      expect(div).toHaveClass('justify-between');
+      expect(div).toHaveClass('items-center');
+      expect(div).toHaveClass('w-full');
+      expect(div).toHaveClass('max-w-4xl');
+      expect(div).toHaveClass('space-x-4');
+      expect(div).toHaveClass('mt-6');
+      expect(div).toHaveClass('text-2xl');
+      expect(div).toHaveClass('text-center');
+    });
+
+    const roundedDivs = screen.getAllByRole('div', { name: 'rounded' });
+    roundedDivs.forEach((div) => {
+      expect(div).toHaveClass('bg-gray-800');
+      expect(div).toHaveClass('p-4');
+    });
+
+    const pieColorDivs = screen.getAllByTestId(/^pie-color-/);
+    pieColorDivs.forEach((div) => {
+      expect(div).toHaveClass('w-10');
+      expect(div).toHaveClass('h-10');
+      expect(div).toHaveClass('rounded-full');
+    });
+
+    const fontBoldSpan = screen.getByText('Extreme Fear zone');
+    expect(fontBoldSpan).toHaveClass('font-bold');
+    expect(fontBoldSpan).toHaveClass('text-3xl');
+  });
+});
