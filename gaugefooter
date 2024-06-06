@@ -1,0 +1,20 @@
+import { render } from '@testing-library/react';
+import Footer from './Footer';
+
+describe('Footer Component', () => {
+  it('renders footer component with correct copyright text', () => {
+    const { getByText } = render(<Footer />);
+    const copyrightText = getByText(/© 2024 Wells Fargo. Proprietary, confidential business information on Teamworks is for internal use only./i);
+    expect(copyrightText).toBeInTheDocument();
+  });
+
+  it('renders with correct CSS classes applied', () => {
+    const { container } = render(<Footer />);
+    const footerElement = container.querySelector('footer');
+    expect(footerElement).toHaveClass('h-20');
+    expect(footerElement).toHaveClass('bg-[#d9d9d6]');
+    expect(footerElement).toHaveClass('border-t-2');
+    expect(footerElement).toHaveClass('border-gray-400');
+    expect(footerElement).toHaveClass('text-center');
+  });
+});
