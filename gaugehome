@@ -1,14 +1,25 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { describe, it, expect } from 'vitest';
 import Home from '../path/to/Home'; // Adjust the path to where your Home component is located
 
 // Mock the components used in Home
-jest.mock('../components/MarketStatus', () => () => <div>MarketStatus</div>);
-jest.mock('../components/MarketSectors', () => () => <div>MarketSectors</div>);
-jest.mock('../components/GetStarted', () => () => <div>GetStarted</div>);
-jest.mock('../components/News', () => () => <div>News</div>);
-jest.mock('../components/TodaysStocks', () => () => <div>TodaysStocks</div>);
+vi.mock('../components/MarketStatus', () => ({
+  default: () => <div>MarketStatus</div>,
+}));
+vi.mock('../components/MarketSectors', () => ({
+  default: () => <div>MarketSectors</div>,
+}));
+vi.mock('../components/GetStarted', () => ({
+  default: () => <div>GetStarted</div>,
+}));
+vi.mock('../components/News', () => ({
+  default: () => <div>News</div>,
+}));
+vi.mock('../components/TodaysStocks', () => ({
+  default: () => <div>TodaysStocks</div>,
+}));
 
 describe('Home component', () => {
   it('renders correctly', () => {
