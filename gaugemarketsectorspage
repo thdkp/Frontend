@@ -1,0 +1,57 @@
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import MarketSectorsPage from '../path/to/MarketSectorsPage'; // Adjust the path
+import { BrowserRouter as Router } from 'react-router-dom';
+import '@testing-library/jest-dom';
+
+vi.mock('../components/MarketStatus', () => ({
+  default: () => <div>MarketStatus</div>,
+}));
+
+vi.mock('../components/DetailedView', () => ({
+  default: ({ sector, onClose }) => (
+    <div>
+      <div>DetailedView: {sector.name}</div>
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
+
+describe('MarketSectorsPage', () => {
+  it('renders correctly and allows interaction', () => {
+    const { getByText, getByPlaceholderText, getAllByText } = render(
+      <Router>
+        <MarketSectorsPage />
+      </Router>
+    );
+
+    // Check if MarketStatus component is rendered
+    expect(getByText('MarketStatus')).toBeInTheDocument();
+
+    // Check if table headers are rendered
+    expect(getByText('Name')).toBeInTheDocument();
+    expect(getByText('Value')).toBeInTheDocument();
+    expect(getByText('Change')).toBeInTheDocument();
+
+    // Check if search input is rendered
+    const searchInput = getByPlaceholderText('Search...');
+    expect(searchInput).toBeInTheDocument();
+
+    // Simulate a search
+    fireEvent.change(searchInput, { target: { value: 'Gold' } });
+    expect(searchInput.value).toBe('Gold');
+
+    // Check if rows are rendered
+    const rows = getAllByText(/Gold/);
+    expect(rows.length).toBeGreaterThan(0);
+
+    // Simulate clicking on a row
+    fireEvent.click(rows[0]);
+    expect(getByText('DetailedView: Gold')).toBeInTheDocument();
+
+    // Simulate closing the detailed view
+    fireEvent.click(getByText('Close'));
+    expect(getByText('DetailedView: Gold')).not.toBeInTheDocument();
+  });
+});
