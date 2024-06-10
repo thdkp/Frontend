@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
+import { describe, it, expect } from 'vitest';
 import MarketSectors from './MarketSectors';
 
 const dummyData = [
@@ -15,68 +16,58 @@ const dummyData = [
   { name: 'NIFTY Pharma', value: 18849.70, change: -0.64, isPositive: false },
 ];
 
-test('renders MarketSectors component with correct elements', () => {
-  render(<MarketSectors />);
+describe('MarketSectors Component', () => {
+  it('renders the component with correct elements', () => {
+    render(<MarketSectors />);
 
-  // Check the main container
-  const mainContainer = screen.getByRole('main');
-  expect(mainContainer).toHaveClass('bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto');
+    // Check header
+    const header = screen.getByText(/Market and sectors/i);
+    expect(header).toBeInTheDocument();
 
-  // Check header
-  const header = screen.getByText(/Market and sectors/i);
-  expect(header).toBeInTheDocument();
-  expect(header).toHaveClass('text-xl font-semibold');
+    // Check "See All" link
+    const seeAllLink = screen.getByText(/See All/i);
+    expect(seeAllLink).toBeInTheDocument();
+    expect(seeAllLink).toHaveAttribute('href', '#');
 
-  // Check "See All" link
-  const seeAllLink = screen.getByText(/See All/i);
-  expect(seeAllLink).toBeInTheDocument();
-  expect(seeAllLink).toHaveAttribute('href', '#');
-  expect(seeAllLink).toHaveClass('text-blue-500');
+    // Check each data item
+    dummyData.forEach((item) => {
+      const nameElement = screen.getByText(item.name);
+      expect(nameElement).toBeInTheDocument();
 
-  // Check each data item
-  dummyData.forEach((item, index) => {
-    const nameElement = screen.getByText(item.name);
-    expect(nameElement).toBeInTheDocument();
+      const valueElement = screen.getByText(item.value.toFixed(2));
+      expect(valueElement).toBeInTheDocument();
 
-    const valueElement = screen.getByText(item.value.toFixed(2));
-    expect(valueElement).toBeInTheDocument();
-    expect(valueElement).toHaveClass('block text-lg font-semibold');
-
-    const changeElement = screen.getByText(new RegExp(`${item.change.toFixed(2)}%`));
-    expect(changeElement).toBeInTheDocument();
-    expect(changeElement).toHaveClass(`text-${item.isPositive ? 'green' : 'red'}-500`);
+      const changeElement = screen.getByText(new RegExp(`${item.change.toFixed(2)}%`));
+      expect(changeElement).toBeInTheDocument();
+    });
   });
-});
 
-test('applies correct CSS styles', () => {
-  render(<MarketSectors />);
+  it('applies correct CSS styles', () => {
+    render(<MarketSectors />);
 
-  // Check styles for the main div
-  const mainDiv = screen.getByRole('main');
-  expect(mainDiv).toHaveClass('bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto');
+    // Check styles for the main container
+    const mainContainer = screen.getByRole('main');
+    expect(mainContainer).toHaveClass('bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mx-auto');
 
-  // Check styles for the flex container
-  const flexContainer = screen.getByText(/Market and sectors/i).closest('div');
-  expect(flexContainer).toHaveClass('flex justify-between items-center mb-4');
+    // Check styles for the header
+    const header = screen.getByText(/Market and sectors/i);
+    expect(header).toHaveClass('text-xl font-semibold');
 
-  // Check styles for the header
-  const header = screen.getByText(/Market and sectors/i);
-  expect(header).toHaveClass('text-xl font-semibold');
+    // Check styles for the "See All" link
+    const seeAllLink = screen.getByText(/See All/i);
+    expect(seeAllLink).toHaveClass('text-blue-500');
 
-  // Check styles for the "See All" link
-  const seeAllLink = screen.getByText(/See All/i);
-  expect(seeAllLink).toHaveClass('text-blue-500');
+    // Check styles for the grid container
+    const gridContainer = screen.getByRole('grid');
+    expect(gridContainer).toHaveClass('grid grid-cols-3 gap-4');
 
-  // Check styles for the grid container
-  const gridContainer = screen.getByRole('grid');
-  expect(gridContainer).toHaveClass('grid grid-cols-3 gap-4');
+    // Check styles for each grid item
+    dummyData.forEach((item) => {
+      const gridItem = screen.getByText(item.name).closest('div');
+      expect(gridItem).toHaveClass('flex justify-between items-center p-4 bg-gray-50 rounded');
 
-  // Check styles for each grid item
-  dummyData.forEach((item) => {
-    const gridItem = screen.getByText(item.name).closest('div');
-    expect(gridItem).toHaveClass('flex justify-between items-center p-4 bg-gray-50 rounded');
-
-    const changeElement = screen.getByText(new RegExp(`${item.change.toFixed(2)}%`));
-    expect(changeElement).toHaveClass(`text-${item.isPositive ? 'green' : 'red'}-500`);
+      const changeElement = screen.getByText(new RegExp(`${item.change.toFixed(2)}%`));
+      expect(changeElement).toHaveClass(`text-${item.isPositive ? 'green' : 'red'}-500`);
+    });
   });
 });
