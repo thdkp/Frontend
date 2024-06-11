@@ -1,0 +1,65 @@
+// AllocationView.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import '@testing-library/jest-dom';
+import AllocationView from './AllocationView';
+
+// Mock data
+const mockData = {
+  informationTechnology: 10,
+  healthCare: 15,
+  financials: 20,
+  consumerDiscretionary: 5,
+  communicationServices: 10,
+  industrials: 10,
+  consumerStaples: 5,
+  energy: 5,
+  utilities: 10,
+  realEstate: 5,
+  material: 5
+};
+
+const mockStore = configureStore([]);
+const store = mockStore({
+  auth: {
+    isAuthenticated: true,
+  },
+});
+
+const storeNotAuthenticated = mockStore({
+  auth: {
+    isAuthenticated: false,
+  },
+});
+
+describe('AllocationView Component', () => {
+  test('renders AllocationView when authenticated', () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <AllocationView data={mockData} />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText("Allocation View")).toBeInTheDocument();
+    expect(screen.getByText("Financials accounts for 20% of your portfolio.")).toBeInTheDocument();
+    expect(screen.getByText("You can read our guide on diversification")).toBeInTheDocument();
+  });
+
+  test('renders AuthError when not authenticated', () => {
+    render(
+      <Provider store={storeNotAuthenticated}>
+        <BrowserRouter>
+          <AllocationView data={mockData} />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText("Oops! Looks like your are not logged in.")).toBeInTheDocument();
+    expect(screen.getByText("Please click here to SignIn")).toBeInTheDocument();
+  });
+});
