@@ -3,7 +3,6 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
 import '@testing-library/jest-dom';
 import AllocationView from './AllocationView';
 import AuthError from './AuthError';
@@ -23,31 +22,22 @@ const mockData = {
   material: 5,
 };
 
-// Simple reducer for authentication state
-const authReducer = (state = { isAuthenticated: false }, action) => {
-  switch (action.type) {
-    case 'LOGIN':
-      return { isAuthenticated: true };
-    case 'LOGOUT':
-      return { isAuthenticated: false };
-    default:
-      return state;
-  }
-};
-
-// Helper function to render with redux
-const renderWithRedux = (component, { initialState, store = createStore(authReducer, initialState) } = {}) => {
-  return {
-    ...render(<Provider store={store}><BrowserRouter>{component}</BrowserRouter></Provider>),
-    store,
-  };
-};
+// Mock Redux provider component
+const MockProvider = ({ store, children }) => (
+  <Provider store={{ getState: () => store, subscribe: () => 0, dispatch: () => {} }}>
+    {children}
+  </Provider>
+);
 
 describe('AllocationView Component', () => {
   test('renders AllocationView when authenticated', () => {
-    renderWithRedux(<AllocationView data={mockData} />, {
-      initialState: { isAuthenticated: true },
-    });
+    render(
+      <MockProvider store={{ auth: { isAuthenticated: true } }}>
+        <BrowserRouter>
+          <AllocationView data={mockData} />
+        </BrowserRouter>
+      </MockProvider>
+    );
 
     expect(screen.getByText("Allocation View")).toBeInTheDocument();
     expect(screen.getByText("Financials accounts for 20% of your portfolio.")).toBeInTheDocument();
@@ -55,9 +45,13 @@ describe('AllocationView Component', () => {
   });
 
   test('renders AuthError when not authenticated', () => {
-    renderWithRedux(<AllocationView data={mockData} />, {
-      initialState: { isAuthenticated: false },
-    });
+    render(
+      <MockProvider store={{ auth: { isAuthenticated: false } }}>
+        <BrowserRouter>
+          <AllocationView data={mockData} />
+        </BrowserRouter>
+      </MockProvider>
+    );
 
     expect(screen.getByText("Oops! Looks like your are not logged in.")).toBeInTheDocument();
     expect(screen.getByText("Please click here to SignIn")).toBeInTheDocument();
