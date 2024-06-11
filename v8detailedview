@@ -1,0 +1,72 @@
+// DetailedView.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
+import DetailedView from './DetailedView';
+
+const mockSector = {
+  name: 'Technology',
+  description: 'Sector description',
+  value: 150.75,
+  oneMonthReturn: 5.4,
+  oneYearReturn: 20.2,
+  high: 160.45,
+  low: 120.85,
+  constituents: 'Some companies',
+  etfs: 'Some ETFs',
+  marketCapShare: 15.5,
+};
+
+describe('DetailedView Component', () => {
+  test('renders DetailedView with sector details', () => {
+    const mockOnClose = jest.fn();
+
+    render(
+      <BrowserRouter>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </BrowserRouter>
+    );
+
+    // Check if sector details are displayed
+    expect(screen.getByText(mockSector.name)).toBeInTheDocument();
+    expect(screen.getByText(mockSector.description)).toBeInTheDocument();
+    expect(screen.getByText(`Last Price: ${mockSector.value.toFixed(2)}`)).toBeInTheDocument();
+    expect(screen.getByText(`1M Return: ${mockSector.oneMonthReturn}%`)).toBeInTheDocument();
+    expect(screen.getByText(`1Y Return: ${mockSector.oneYearReturn}%`)).toBeInTheDocument();
+    expect(screen.getByText(`52W High: ${mockSector.high}`)).toBeInTheDocument();
+    expect(screen.getByText(`52W Low: ${mockSector.low}`)).toBeInTheDocument();
+    expect(screen.getByText(`Constituents: ${mockSector.constituents}`)).toBeInTheDocument();
+    expect(screen.getByText(`ETFs: ${mockSector.etfs}`)).toBeInTheDocument();
+    expect(screen.getByText(`M Cap Share: ${mockSector.marketCapShare}%`)).toBeInTheDocument();
+    expect(screen.getByText('View More Details')).toBeInTheDocument();
+  });
+
+  test('calls onClose when close button is clicked', () => {
+    const mockOnClose = jest.fn();
+
+    render(
+      <BrowserRouter>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </BrowserRouter>
+    );
+
+    // Simulate clicking the close button
+    fireEvent.click(screen.getByRole('button', { name: /×/i }));
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  test('calls onClose when Escape key is pressed', () => {
+    const mockOnClose = jest.fn();
+
+    render(
+      <BrowserRouter>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </BrowserRouter>
+    );
+
+    // Simulate pressing the Escape key
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+});
