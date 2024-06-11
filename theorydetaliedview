@@ -1,0 +1,74 @@
+import React from 'react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { BrowserRouter as Router } from 'react-router-dom'
+import DetailedView from './detaildisplay'
+
+describe('DetailedView Component', () => {
+  const mockSector = {
+    name: 'Technology',
+    description: 'Sector Description',
+    value: 123.45,
+    oneMonthReturn: 5.67,
+    oneYearReturn: 12.34,
+    high: 150,
+    low: 100,
+    constituents: 'List of Constituents',
+    etfs: 'List of ETFs',
+    marketCapShare: 10.5,
+  }
+
+  const mockOnClose = vi.fn()
+
+  it('should render the sector details correctly', () => {
+    render(
+      <Router>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </Router>
+    )
+
+    expect(screen.getByText(mockSector.name)).toBeInTheDocument()
+    expect(screen.getByText(mockSector.description)).toBeInTheDocument()
+    expect(screen.getByText(`Last Price: ${mockSector.value.toFixed(2)}`)).toBeInTheDocument()
+    expect(screen.getByText(`1M Return: ${mockSector.oneMonthReturn}%`)).toBeInTheDocument()
+    expect(screen.getByText(`1Y Return: ${mockSector.oneYearReturn}%`)).toBeInTheDocument()
+    expect(screen.getByText(`52W High: ${mockSector.high}`)).toBeInTheDocument()
+    expect(screen.getByText(`52W Low: ${mockSector.low}`)).toBeInTheDocument()
+    expect(screen.getByText(`Constituents: ${mockSector.constituents}`)).toBeInTheDocument()
+    expect(screen.getByText(`ETFs: ${mockSector.etfs}`)).toBeInTheDocument()
+    expect(screen.getByText(`M Cap Share: ${mockSector.marketCapShare}%`)).toBeInTheDocument()
+  })
+
+  it('should close when the close button is clicked', () => {
+    render(
+      <Router>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </Router>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /×/i }))
+    expect(mockOnClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('should close when the Escape key is pressed', () => {
+    render(
+      <Router>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </Router>
+    )
+
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' })
+    expect(mockOnClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('should render the "View More Details" link with correct URL', () => {
+    render(
+      <Router>
+        <DetailedView sector={mockSector} onClose={mockOnClose} />
+      </Router>
+    )
+
+    const detailsLink = screen.getByRole('link', { name: /View More Details/i })
+    expect(detailsLink).toHaveAttribute('href', `/details/${mockSector.name}`)
+  })
+})
