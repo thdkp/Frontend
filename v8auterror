@@ -1,0 +1,27 @@
+// AuthError.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
+import AuthError from './AuthError';
+
+describe('AuthError Component', () => {
+  test('renders the AuthError component with correct text', () => {
+    render(
+      <BrowserRouter>
+        <AuthError />
+      </BrowserRouter>
+    );
+
+    // Check if the first div with error message is present
+    expect(screen.getByText("Oops! Looks like your are not logged in.")).toBeInTheDocument();
+
+    // Check if the second div with link is present
+    expect(screen.getByTestId('test1')).toBeInTheDocument();
+
+    // Check if the link is present with correct text and href attribute
+    const linkElement = screen.getByRole('link', { name: /SignIn/i });
+    expect(linkElement).toBeInTheDocument();
+    expect(linkElement).toHaveAttribute('href', '/signin');
+  });
+});
