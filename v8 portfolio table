@@ -1,0 +1,61 @@
+// PortfolioTable.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import PortfolioTable from './PortfolioTable';
+
+describe('PortfolioTable', () => {
+  const portfolios = [
+    {
+      portfolioid: 1,
+      name: 'Portfolio 1',
+      profitLoss: 1000,
+      capital: 5000,
+      worth: 6000,
+      allocation: [{ category: 'Stocks', percentage: 50 }],
+    },
+    {
+      portfolioid: 2,
+      name: 'Portfolio 2',
+      profitLoss: -500,
+      capital: 3000,
+      worth: 2500,
+      allocation: [{ category: 'Bonds', percentage: 50 }],
+    },
+  ];
+
+  test('renders portfolio table with search functionality', () => {
+    render(<PortfolioTable portfolios={portfolios} onSelectPortfolio={() => {}} />);
+
+    expect(screen.getByText('Portfolio Table')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Search by name'), { target: { value: 'Portfolio 1' } });
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.queryByText('Portfolio 2')).not.toBeInTheDocument();
+  });
+
+  test('toggles expanded portfolio details', () => {
+    render(<PortfolioTable portfolios={portfolios} onSelectPortfolio={() => {}} />);
+
+    expect(screen.queryByText('Summary for Portfolio 1')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Portfolio 1'));
+    expect(screen.getByText('Summary for Portfolio 1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Portfolio 1'));
+    expect(screen.queryByText('Summary for Portfolio 1')).not.toBeInTheDocument();
+  });
+
+  test('renders create new portfolio button when authenticated', () => {
+    render(<PortfolioTable portfolios={[]} onSelectPortfolio={() => {}} />, { initialState: { auth: { isAuthenticated: true } } });
+
+    expect(screen.getByText('Create new')).toBeInTheDocument();
+  });
+
+  test('renders AuthError when not authenticated', () => {
+    render(<PortfolioTable portfolios={[]} onSelectPortfolio={() => {}} />, { initialState: { auth: { isAuthenticated: false } } });
+
+    expect(screen.getByText('Please sign in to access your portfolios.')).toBeInTheDocument();
+  });
+});
