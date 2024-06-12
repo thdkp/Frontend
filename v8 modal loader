@@ -1,0 +1,21 @@
+// ModalLoader.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import ModalLoader from './ModalLoader';
+
+describe('ModalLoader Component', () => {
+  test('renders ModalLoader component correctly', () => {
+    render(<ModalLoader />);
+
+    // Check if the ModalLoader container is displayed
+    const modalContainer = screen.getByRole('dialog');
+    expect(modalContainer).toBeInTheDocument();
+    expect(modalContainer).toHaveClass('fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50');
+
+    // Check if the loader element is displayed
+    const loaderElement = screen.getByRole('status');
+    expect(loaderElement).toBeInTheDocument();
+    expect(loaderElement).toHaveClass('w-16 h-16 border-4 border-dashed rounded-full animate-spin border-blue-500');
+  });
+});
