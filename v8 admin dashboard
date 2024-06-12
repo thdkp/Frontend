@@ -1,0 +1,124 @@
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createMemoryHistory } from 'history';
+import { Router } from 'react-router-dom';
+import AdminDashboard from './AdminDashboard'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('AdminDashboard component', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/admin/home')) {
+        return Promise.resolve({
+          json: () =>
+            Promise.resolve({
+              noUsers: 100,
+              noPortfolios: 50,
+              totalInvested: 5000000,
+              totalWorth: 6000000,
+              netPL: 1000000,
+              investmentDist: {
+                informationTechnology: 30,
+                healthCare: 20,
+                financials: 10,
+                consumerDiscretionary: 10,
+                communicationServices: 5,
+                industrials: 5,
+                consumerStaples: 5,
+                energy: 5,
+                utilities: 5,
+                realEstate: 3,
+                material: 2,
+              },
+            }),
+        });
+      } else if (url.includes('/admin/history')) {
+        return Promise.resolve({
+          json: () =>
+            Promise.resolve([
+              { date: '2023-01-01', value: 5000000 },
+              { date: '2023-02-01', value: 5200000 },
+              { date: '2023-03-01', value: 5400000 },
+              { date: '2023-04-01', value: 5600000 },
+              { date: '2023-05-01', value: 5800000 },
+            ]),
+        });
+      }
+    });
+  });
+
+  afterEach(() => {
+    global.fetch.mockClear();
+  });
+
+  it('renders AdminDashboard component correctly', async () => {
+    render(
+      <Router history={createMemoryHistory()}>
+        <AdminDashboard />
+      </Router>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Total Users')).toBeInTheDocument();
+      expect(screen.getByText('Total Portfolios')).toBeInTheDocument();
+      expect(screen.getByText('Total Amount Invested')).toBeInTheDocument();
+      expect(screen.getByText('Total Worth')).toBeInTheDocument();
+      expect(screen.getByText('Profit/Loss')).toBeInTheDocument();
+    });
+  });
+
+  it('fetches and displays data correctly', async () => {
+    render(
+      <Router history={createMemoryHistory()}>
+        <AdminDashboard />
+      </Router>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('100')).toBeInTheDocument(); // Total Users
+      expect(screen.getByText('50')).toBeInTheDocument(); // Total Portfolios
+      expect(screen.getByText('5000000')).toBeInTheDocument(); // Total Amount Invested
+      expect(screen.getByText('6000000')).toBeInTheDocument(); // Total Worth
+      expect(screen.getByText('1000000')).toBeInTheDocument(); // Profit/Loss
+    });
+  });
+
+  it('renders line and pie charts correctly', async () => {
+    render(
+      <Router history={createMemoryHistory()}>
+        <AdminDashboard />
+      </Router>
+    );
+
+    await waitFor(() => {
+      const lineChart = screen.getByRole('img', { name: /portfolio worth over time/i });
+      const pieChart = screen.getByRole('img', { name: /investment distribution/i });
+
+      expect(lineChart).toBeInTheDocument();
+      expect(pieChart).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to correct pages on button click', () => {
+    const history = createMemoryHistory();
+    render(
+      <Router history={history}>
+        <AdminDashboard />
+      </Router>
+    );
+
+    const addNewsButton = screen.getByText('Add News');
+    const goToUsersButton = screen.getByText('Go to Users');
+    const editStocksButton = screen.getByText('Edit Stocks');
+
+    userEvent.click(addNewsButton);
+    expect(history.location.pathname).toBe('/createnews');
+
+    userEvent.click(goToUsersButton);
+    expect(history.location.pathname).toBe('/users');
+
+    userEvent.click(editStocksButton);
+    expect(history.location.pathname).toBe('/editstocks');
+  });
+});
