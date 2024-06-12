@@ -59,3 +59,71 @@ describe('PortfolioTable', () => {
     expect(screen.getByText('Please sign in to access your portfolios.')).toBeInTheDocument();
   });
 });
+.........
+// PortfolioTable.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import PortfolioTable from './PortfolioTable';
+
+const mockStore = configureStore([]);
+
+describe('PortfolioTable', () => {
+  const portfolios = [
+    {
+      portfolioid: 1,
+      name: 'Portfolio 1',
+      profitLoss: 1000,
+      capital: 5000,
+      worth: 6000,
+      allocation: { stocks: 50, bonds: 50 },
+    },
+    {
+      portfolioid: 2,
+      name: 'Portfolio 2',
+      profitLoss: -500,
+      capital: 3000,
+      worth: 2500,
+      allocation: { stocks: 70, bonds: 30 },
+    },
+  ];
+
+  test('renders portfolio table with search functionality', () => {
+    const store = mockStore({
+      auth: { isAuthenticated: true },
+    });
+
+    render(
+      <Provider store={store}>
+        <PortfolioTable portfolios={portfolios} onSelectPortfolio={() => {}} />
+      </Provider>
+    );
+
+    // Ensure table headers are rendered
+    expect(screen.getByText('Portfolio Name')).toBeInTheDocument();
+    expect(screen.getByText('Profit/Loss')).toBeInTheDocument();
+    expect(screen.getByText('Invested')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio Worth')).toBeInTheDocument();
+
+    // Ensure portfolio data is rendered
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('▲ 1000')).toBeInTheDocument();
+    expect(screen.getByText('5000')).toBeInTheDocument();
+    expect(screen.getByText('6000')).toBeInTheDocument();
+
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+    expect(screen.getByText('▼ -500')).toBeInTheDocument();
+    expect(screen.getByText('3000')).toBeInTheDocument();
+    expect(screen.getByText('2500')).toBeInTheDocument();
+
+    // Test search functionality
+    fireEvent.change(screen.getByPlaceholderText('Search by name'), {
+      target: { value: 'Portfolio 1' },
+    });
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.queryByText('Portfolio 2')).not.toBeInTheDocument();
+  });
+
+  // Add more test cases as needed...
+});
