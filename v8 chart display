@@ -1,0 +1,30 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import ChartDisplay from './ChartDisplay'; // Adjust the import path as needed
+
+describe('ChartDisplay component', () => {
+  const mockPortfolio = [
+    { worth: 252501 },
+  ];
+
+  it('renders the portfolio worth correctly', () => {
+    render(<ChartDisplay portfolio={mockPortfolio} />);
+    
+    expect(screen.getByText(`$${mockPortfolio[0].worth}`)).toBeInTheDocument();
+  });
+
+  it('renders the overall performance text', () => {
+    render(<ChartDisplay portfolio={mockPortfolio} />);
+    
+    expect(screen.getByText('Overall Performance')).toBeInTheDocument();
+    expect(screen.getByText('+230.82% from July 2021')).toBeInTheDocument();
+  });
+
+  it('renders the Line chart', () => {
+    render(<ChartDisplay portfolio={mockPortfolio} />);
+    
+    // Since rendering of Line component might not have specific text content,
+    // We check if the canvas element (which Chart.js uses) is present
+    expect(screen.getByRole('img')).toBeInTheDocument();
+  });
+});
