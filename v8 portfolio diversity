@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, fireEvent, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import { render, fireEvent } from '@testing-library/react';
 import { useSelector } from 'react-redux';
 import PortfolioDiversity from './PortfolioDiversity';
 import AllocationView from './AllocationView';
@@ -32,26 +31,26 @@ describe('PortfolioDiversity', () => {
   });
 
   it('renders the component correctly when authenticated', () => {
-    render(<PortfolioDiversity portfolio={{ allocation: [], bondEquity: [], assetClass: [] }} />);
+    const { getByText } = render(<PortfolioDiversity portfolio={{ allocation: [], bondEquity: [], assetClass: [] }} />);
 
-    expect(screen.getByText('Portfolio Diversity')).toBeInTheDocument();
-    expect(screen.getByText('Allocation View')).toBeInTheDocument();
-    expect(screen.getByText('Bond Equity')).toBeInTheDocument();
-    expect(screen.getByText('Asset Class')).toBeInTheDocument();
-    expect(screen.getByText('Allocation View')).toBeInTheDocument(); // Default view
+    expect(getByText('Portfolio Diversity')).toBeInTheDocument();
+    expect(getByText('Allocation View')).toBeInTheDocument();
+    expect(getByText('Bond Equity')).toBeInTheDocument();
+    expect(getByText('Asset Class')).toBeInTheDocument();
+    expect(getByText('Allocation View')).toBeInTheDocument(); // Default view
   });
 
   it('switches views when buttons are clicked', () => {
-    render(<PortfolioDiversity portfolio={{ allocation: [], bondEquity: [], assetClass: [] }} />);
+    const { getByText } = render(<PortfolioDiversity portfolio={{ allocation: [], bondEquity: [], assetClass: [] }} />);
 
-    fireEvent.click(screen.getByText('Bond Equity'));
-    expect(screen.getByText('Bond Equity View')).toBeInTheDocument();
+    fireEvent.click(getByText('Bond Equity'));
+    expect(getByText('Bond Equity View')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Asset Class'));
-    expect(screen.getByText('Asset Class View')).toBeInTheDocument();
+    fireEvent.click(getByText('Asset Class'));
+    expect(getByText('Asset Class View')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Allocation View'));
-    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+    fireEvent.click(getByText('Allocation View'));
+    expect(getByText('Allocation View')).toBeInTheDocument();
   });
 
   it('renders AuthError component when not authenticated', () => {
@@ -61,8 +60,8 @@ describe('PortfolioDiversity', () => {
       }
     });
 
-    render(<PortfolioDiversity portfolio={{}} />);
+    const { getByText } = render(<PortfolioDiversity portfolio={{}} />);
 
-    expect(screen.getByText('Auth Error')).toBeInTheDocument();
+    expect(getByText('Auth Error')).toBeInTheDocument();
   });
 });
