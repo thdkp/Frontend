@@ -1,0 +1,87 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { useSelector, useDispatch } from 'react-redux';
+import userEvent from '@testing-library/user-event';
+import UserCard from './UserCard'; // Adjust the import path as needed
+import { logout } from '../redux/slices/user/userSlice'; // Adjust the import path as needed
+
+jest.mock('react-redux', () => ({
+  useSelector: jest.fn(),
+  useDispatch: jest.fn(),
+}));
+
+jest.mock('../redux/slices/user/userSlice', () => ({
+  logout: jest.fn(),
+}));
+
+describe('UserCard component', () => {
+  const mockDispatch = jest.fn();
+  const mockUser = {
+    email: 'test@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+  };
+
+  beforeEach(() => {
+    useDispatch.mockReturnValue(mockDispatch);
+    useSelector.mockImplementation(callback =>
+      callback({
+        auth: {
+          isAuthenticated: true,
+          user: mockUser,
+        },
+      })
+    );
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders user information correctly', () => {
+    render(<UserCard />);
+
+    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    expect(screen.getByText(mockUser.firstName)).toBeInTheDocument();
+    expect(screen.getByText(mockUser.lastName)).toBeInTheDocument();
+  });
+
+  it('dispatches logout action when handleLogout is called', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+    );
+
+    render(<UserCard />);
+
+    const logoutButton = screen.getByRole('button', { name: /logout/i });
+    await userEvent.click(logoutButton);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${import.meta.env?.VITE_BACKEND_URL}/auth/logout`,
+      {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    expect(mockDispatch).toHaveBeenCalledWith(logout());
+  });
+
+  it('alerts error on logout failure', async () => {
+    global.fetch = jest.fn(() => Promise.reject(new Error('Logout failed')));
+
+    window.alert = jest.fn();
+
+    render(<UserCard />);
+
+    const logoutButton = screen.getByRole('button', { name: /logout/i });
+    await userEvent.click(logoutButton);
+
+    expect(window.alert).toHaveBeenCalledWith('error while logging out');
+  });
+});
