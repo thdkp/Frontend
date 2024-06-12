@@ -1,0 +1,68 @@
+import React from 'react';
+import { render, fireEvent, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
+import { useSelector } from 'react-redux';
+import PortfolioDiversity from './PortfolioDiversity';
+import AllocationView from './AllocationView';
+import BondEquity from './BondEquity';
+import AssetClass from './AssetClass';
+import AuthError from './AuthError';
+
+// Mock the child components and Redux hook
+jest.mock('react-redux', () => ({
+  useSelector: jest.fn(),
+}));
+
+jest.mock('./AllocationView', () => jest.fn(() => <div>Allocation View</div>));
+jest.mock('./BondEquity', () => jest.fn(() => <div>Bond Equity View</div>));
+jest.mock('./AssetClass', () => jest.fn(() => <div>Asset Class View</div>));
+jest.mock('./AuthError', () => jest.fn(() => <div>Auth Error</div>));
+
+describe('PortfolioDiversity', () => {
+  beforeEach(() => {
+    useSelector.mockImplementation((selector) => {
+      if (selector === (state) => state.auth) {
+        return { isAuthenticated: true };
+      }
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders the component correctly when authenticated', () => {
+    render(<PortfolioDiversity portfolio={{ allocation: [], bondEquity: [], assetClass: [] }} />);
+
+    expect(screen.getByText('Portfolio Diversity')).toBeInTheDocument();
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+    expect(screen.getByText('Bond Equity')).toBeInTheDocument();
+    expect(screen.getByText('Asset Class')).toBeInTheDocument();
+    expect(screen.getByText('Allocation View')).toBeInTheDocument(); // Default view
+  });
+
+  it('switches views when buttons are clicked', () => {
+    render(<PortfolioDiversity portfolio={{ allocation: [], bondEquity: [], assetClass: [] }} />);
+
+    fireEvent.click(screen.getByText('Bond Equity'));
+    expect(screen.getByText('Bond Equity View')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Asset Class'));
+    expect(screen.getByText('Asset Class View')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Allocation View'));
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+  });
+
+  it('renders AuthError component when not authenticated', () => {
+    useSelector.mockImplementation((selector) => {
+      if (selector === (state) => state.auth) {
+        return { isAuthenticated: false };
+      }
+    });
+
+    render(<PortfolioDiversity portfolio={{}} />);
+
+    expect(screen.getByText('Auth Error')).toBeInTheDocument();
+  });
+});
