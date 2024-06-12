@@ -1,0 +1,89 @@
+// Navbar.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import Navbar from './Navbar';
+
+// Create a mock store
+const mockStore = configureStore([]);
+const store = mockStore({
+  auth: {
+    isAuthenticated: true,
+    user: { firstName: 'John' },
+  },
+  theme: {
+    isDarkMode: false,
+  },
+});
+
+describe('Navbar Component', () => {
+  test('renders Navbar component correctly', () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <Navbar />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // Check if the mobile navbar is displayed
+    const mobileNavbar = screen.getByTestId('mobile-navbar');
+    expect(mobileNavbar).toBeInTheDocument();
+
+    // Check if the desktop navbar is displayed
+    const desktopNavbar = screen.getByTestId('desktop-navbar');
+    expect(desktopNavbar).toBeInTheDocument();
+
+    // Check if the WELLS FARGO text is displayed
+    const brandText = screen.getByText(/WELLS FARGO/i);
+    expect(brandText).toBeInTheDocument();
+
+    // Check if the hamburger menu button is displayed
+    const hamburgerButton = screen.getByTestId('hamburger-button');
+    expect(hamburgerButton).toBeInTheDocument();
+  });
+
+  test('toggles mobile menu when hamburger button is clicked', () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <Navbar />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // Check if the hamburger menu button is displayed
+    const hamburgerButton = screen.getByTestId('hamburger-button');
+    expect(hamburgerButton).toBeInTheDocument();
+
+    // Click the hamburger button
+    fireEvent.click(hamburgerButton);
+
+    // Check if the cross button is displayed
+    const crossButton = screen.getByTestId('cross-button');
+    expect(crossButton).toBeInTheDocument();
+  });
+
+  test('toggles dark mode when dark mode button is clicked', () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <Navbar />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // Check if the dark mode button is displayed
+    const darkModeButton = screen.getByTestId('dark-mode-button');
+    expect(darkModeButton).toBeInTheDocument();
+
+    // Click the dark mode button
+    fireEvent.click(darkModeButton);
+
+    // Check if the dark mode button toggled
+    expect(store.getActions()).toContainEqual({ type: 'theme/toggleTheme' });
+  });
+});
