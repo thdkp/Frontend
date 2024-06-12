@@ -65,3 +65,30 @@ describe('PortfolioDiversity', () => {
     expect(getByText('Auth Error')).toBeInTheDocument();
   });
 });
+
+.......
+// PortfolioDiversity.test.js
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import PortfolioDiversity from './PortfolioDiversity';
+
+describe('PortfolioDiversity', () => {
+  test('renders correctly', () => {
+    // Mocked portfolio data
+    const portfolioData = {
+      allocation: [
+        { category: 'Stocks', percentage: 50 },
+        { category: 'Bonds', percentage: 30 },
+        { category: 'Cash', percentage: 20 },
+      ],
+    };
+
+    // Render the component with mocked data
+    render(<PortfolioDiversity portfolio={portfolioData} />);
+
+    // Assertions
+    expect(screen.getByText('Portfolio Diversity')).toBeInTheDocument();
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+    // Add more assertions based on your component's behavior
+  });
+});
