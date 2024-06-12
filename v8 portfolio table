@@ -60,14 +60,25 @@ describe('PortfolioTable', () => {
   });
 });
 .........
+// PortfolioTable.tes
 // PortfolioTable.test.jsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import configureStore from 'redux-mock-store';
 import PortfolioTable from './PortfolioTable';
 
-const mockStore = configureStore([]);
+const mockStore = {
+  getState: () => ({
+    auth: { isAuthenticated: true },
+  }),
+  subscribe: () => {},
+  dispatch: () => {},
+};
+
+jest.mock('react-redux', () => ({
+  ...jest.requireActual('react-redux'),
+  useSelector: jest.fn(),
+}));
 
 describe('PortfolioTable', () => {
   const portfolios = [
@@ -90,12 +101,8 @@ describe('PortfolioTable', () => {
   ];
 
   test('renders portfolio table with search functionality', () => {
-    const store = mockStore({
-      auth: { isAuthenticated: true },
-    });
-
     render(
-      <Provider store={store}>
+      <Provider store={mockStore}>
         <PortfolioTable portfolios={portfolios} onSelectPortfolio={() => {}} />
       </Provider>
     );
