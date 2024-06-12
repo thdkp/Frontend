@@ -1,52 +1,120 @@
-// SignIn.test.jsx
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
-import { BrowserRouter as Router } from 'react-router-dom';
-import SignIn from './SignIn';
-import { createStore, applyMiddleware } from 'redux';
-import thunk from 'redux-thunk';
-import rootReducer from '../redux/rootReducer';
+import { createMemoryHistory } from 'history';
+import { Router } from 'react-router-dom';
+import configureStore from 'redux-mock-store';
+import SignIn from './SignIn'; // Adjust the import path as needed
+import { vi } from 'vitest';
 
-const store = createStore(rootReducer, applyMiddleware(thunk));
+const mockStore = configureStore([]);
 
-describe('SignIn', () => {
-  test('renders sign-in form', () => {
-    render(
-      <Provider store={store}>
-        <Router>
-          <SignIn />
-        </Router>
-      </Provider>
-    );
+describe('SignIn component', () => {
+  let store;
 
-    // Ensure form elements are rendered
-    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter your email')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter your password')).toBeInTheDocument();
-    expect(screen.getByText('Sign in')).toBeInTheDocument();
-    expect(screen.getByText("Don't have an account?")).toBeInTheDocument();
+  beforeEach(() => {
+    store = mockStore({
+      user: { isAuthenticated: false },
+    });
   });
 
-  test('toggle password visibility', () => {
+  it('renders SignIn component correctly', () => {
     render(
       <Provider store={store}>
-        <Router>
-          <SignIn />
-        </Router>
+        <SignIn />
       </Provider>
     );
 
-    // Initial password type should be password
+    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+    expect(screen.getByText('Please enter your details.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+  });
+
+  it('handles email and password input changes', () => {
+    render(
+      <Provider store={store}>
+        <SignIn />
+      </Provider>
+    );
+
+    const emailInput = screen.getByPlaceholderText('Enter your email');
     const passwordInput = screen.getByPlaceholderText('Enter your password');
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+
+    expect(emailInput.value).toBe('test@example.com');
+    expect(passwordInput.value).toBe('password');
+  });
+
+  it('toggles password visibility', () => {
+    render(
+      <Provider store={store}>
+        <SignIn />
+      </Provider>
+    );
+
+    const passwordInput = screen.getByPlaceholderText('Enter your password');
+    const toggleButton = screen.getByRole('button', { name: /eye/i });
+
+    // Initial state: password is hidden
     expect(passwordInput.type).toBe('password');
 
-    // Click toggle button
-    fireEvent.click(screen.getByRole('button'));
-
-    // After clicking, password type should be text
+    // Click to show password
+    userEvent.click(toggleButton);
     expect(passwordInput.type).toBe('text');
+
+    // Click again to hide password
+    userEvent.click(toggleButton);
+    expect(passwordInput.type).toBe('password');
   });
 
-  // Add more test cases as needed...
+  it('submits form and navigates on successful login', async () => {
+    const history = createMemoryHistory();
+    const mockLogin = vi.fn();
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({ user: { id: 1, name: 'Test User' } }),
+        headers: {
+          get: (name) => (name === 'accessToken' ? 'testAccessToken' : 'testRefreshToken'),
+        },
+      })
+    );
+
+    render(
+      <Provider store={store}>
+        <Router history={history}>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    const emailInput = screen.getByPlaceholderText('Enter your email');
+    const passwordInput = screen.getByPlaceholderText('Enter your password');
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+
+    userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${import.meta.env?.VITE_BACKEND_URL}/auth/login`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@example.com', password: 'password' }),
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sign in')).not.toBeInTheDocument();
+    });
+  });
 });
