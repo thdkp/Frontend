@@ -1,0 +1,54 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import DetailedView from './DetailedView'; // Adjust the import path as needed
+
+describe('DetailedView component', () => {
+  const mockSector = {
+    name: 'Technology',
+    description: 'Technology sector description',
+    value: 150.25,
+    oneMonthReturn: 5.2,
+    oneYearReturn: 20.5,
+    high: 180.75,
+    low: 120.5,
+    constituents: 'Company A, Company B',
+    etfs: 'ETF1, ETF2',
+    marketCapShare: 25.6,
+  };
+
+  const mockOnClose = vi.fn();
+
+  beforeEach(() => {
+    render(<DetailedView sector={mockSector} onClose={mockOnClose} />);
+  });
+
+  it('renders sector information correctly', () => {
+    expect(screen.getByText(mockSector.name)).toBeInTheDocument();
+    expect(screen.getByText(mockSector.description)).toBeInTheDocument();
+    expect(screen.getByText(`Last Price: ${mockSector.value.toFixed(2)}`)).toBeInTheDocument();
+    expect(screen.getByText(`1M Return: ${mockSector.oneMonthReturn}%`)).toBeInTheDocument();
+    expect(screen.getByText(`1Y Return: ${mockSector.oneYearReturn}%`)).toBeInTheDocument();
+    expect(screen.getByText(`52W High: ${mockSector.high}`)).toBeInTheDocument();
+    expect(screen.getByText(`52W Low: ${mockSector.low}`)).toBeInTheDocument();
+    expect(screen.getByText(`Constituents: ${mockSector.constituents}`)).toBeInTheDocument();
+    expect(screen.getByText(`ETFs: ${mockSector.etfs}`)).toBeInTheDocument();
+    expect(screen.getByText(`M Cap Share: ${mockSector.marketCapShare}%`)).toBeInTheDocument();
+  });
+
+  it('calls onClose when close button is clicked', async () => {
+    const closeButton = screen.getByRole('button', { name: /×/i });
+    await userEvent.click(closeButton);
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it('calls onClose when Escape key is pressed', () => {
+    userEvent.keyboard('{Escape}');
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it('contains link to view more details', () => {
+    const moreDetailsLink = screen.getByRole('link', { name: /View More Details/i });
+    expect(moreDetailsLink).toHaveAttribute('href', `/details/${mockSector.name}`);
+  });
+});
