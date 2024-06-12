@@ -1,0 +1,52 @@
+// SignIn.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import SignIn from './SignIn';
+import { createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk';
+import rootReducer from '../redux/rootReducer';
+
+const store = createStore(rootReducer, applyMiddleware(thunk));
+
+describe('SignIn', () => {
+  test('renders sign-in form', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    // Ensure form elements are rendered
+    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter your email')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter your password')).toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
+    expect(screen.getByText("Don't have an account?")).toBeInTheDocument();
+  });
+
+  test('toggle password visibility', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    // Initial password type should be password
+    const passwordInput = screen.getByPlaceholderText('Enter your password');
+    expect(passwordInput.type).toBe('password');
+
+    // Click toggle button
+    fireEvent.click(screen.getByRole('button'));
+
+    // After clicking, password type should be text
+    expect(passwordInput.type).toBe('text');
+  });
+
+  // Add more test cases as needed...
+});
