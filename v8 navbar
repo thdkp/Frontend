@@ -87,3 +87,119 @@ describe('Navbar Component', () => {
     expect(store.getActions()).toContainEqual({ type: 'theme/toggleTheme' });
   });
 });
+
+
+
+.................
+import React from 'react';
+import { render, fireEvent, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
+import { useSelector, useDispatch } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Navbar } from './Navbar'; // adjust the path as necessary
+import { logout } from '../redux/slices/user/userSlice';
+import { toggleTheme, selectIsDarkMode } from '../redux/slices/themeSlice';
+
+// Mock the useSelector and useDispatch hooks
+jest.mock('react-redux', () => ({
+  useSelector: jest.fn(),
+  useDispatch: jest.fn(),
+}));
+
+// Mock the redux actions
+jest.mock('../redux/slices/user/userSlice', () => ({
+  logout: jest.fn(),
+}));
+
+jest.mock('../redux/slices/themeSlice', () => ({
+  toggleTheme: jest.fn(),
+  selectIsDarkMode: jest.fn(),
+}));
+
+describe('Navbar', () => {
+  const mockDispatch = jest.fn();
+
+  beforeEach(() => {
+    useDispatch.mockReturnValue(mockDispatch);
+    useSelector.mockImplementation((selector) => {
+      if (selector === state => state.auth) {
+        return { isAuthenticated: true, user: { firstName: 'John' } };
+      } else if (selector === selectIsDarkMode) {
+        return true;
+      }
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders the navbar correctly', () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    expect(screen.getByText('WELLS FARGO')).toBeInTheDocument();
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio')).toBeInTheDocument();
+    expect(screen.getByText('Logout')).toBeInTheDocument();
+  });
+
+  it('toggles the dark mode', () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const darkModeButton = screen.getByText('MdDarkMode');
+    fireEvent.click(darkModeButton);
+    expect(mockDispatch).toHaveBeenCalledWith(toggleTheme());
+  });
+
+  it('handles logout correctly', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({}),
+      })
+    );
+
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const logoutButton = screen.getByText('Logout');
+    fireEvent.click(logoutButton);
+
+    expect(global.fetch).toHaveBeenCalledWith(`${import.meta.env.VITE_BACKEND_URL}/auth/logout`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'accessToken': sessionStorage.getItem('accessToken'),
+      },
+    });
+    expect(mockDispatch).toHaveBeenCalledWith(logout());
+  });
+
+  it('opens and closes the mobile menu', () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const menuButton = screen.getByText('GiHamburgerMenu');
+    fireEvent.click(menuButton);
+    expect(screen.getByText('Home')).toBeVisible();
+    expect(screen.getByText('Portfolio')).toBeVisible();
+    expect(screen.getByText('Logout')).toBeVisible();
+
+    const closeButton = screen.getByText('ImCross');
+    fireEvent.click(closeButton);
+    expect(screen.queryByText('Home')).not.toBeVisible();
+  });
+});
