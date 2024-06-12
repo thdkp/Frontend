@@ -1,0 +1,65 @@
+// MarketStatus.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import themeReducer from '../redux/slices/themeSlice'; // Assuming this is the correct path
+import MarketStatus from './MarketStatus';
+
+// Create a mock store with the initial state
+const renderWithProviders = (
+  ui,
+  { preloadedState = {}, store = configureStore({ reducer: { theme: themeReducer }, preloadedState }) } = {}
+) => {
+  return render(<Provider store={store}>{ui}</Provider>);
+};
+
+describe('MarketStatus Component', () => {
+  test('renders MarketStatus component with correct data', () => {
+    renderWithProviders(<MarketStatus />, {
+      preloadedState: {
+        theme: { isDarkMode: false },
+      },
+    });
+
+    // Check if the NIFTY 50 and SENSEX values are displayed
+    expect(screen.getByText('NIFTY 50')).toBeInTheDocument();
+    expect(screen.getByText('22530.70')).toBeInTheDocument();
+    expect(screen.getByText('SENSEX')).toBeInTheDocument();
+    expect(screen.getByText('73961.31')).toBeInTheDocument();
+
+    // Check if the weeklyStatus circles are displayed
+    ['MON', 'TUE', 'WED', 'THU', 'FRI'].forEach((day) => {
+      expect(screen.getByText(day)).toBeInTheDocument();
+    });
+
+    // Check if the fear index is displayed correctly
+    expect(screen.getByText('The market is in')).toBeInTheDocument();
+    expect(screen.getByText('Extreme Fear zone')).toBeInTheDocument();
+  });
+
+  test('applies dark mode classes correctly', () => {
+    renderWithProviders(<MarketStatus />, {
+      preloadedState: {
+        theme: { isDarkMode: true },
+      },
+    });
+
+    // Check if the dark mode classes are applied
+    expect(screen.getByText('NIFTY 50').closest('div')).toHaveClass('bg-gray-800 text-white');
+    expect(screen.getByText('SENSEX').closest('div')).toHaveClass('bg-gray-800 text-white');
+  });
+
+  test('applies light mode classes correctly', () => {
+    renderWithProviders(<MarketStatus />, {
+      preloadedState: {
+        theme: { isDarkMode: false },
+      },
+    });
+
+    // Check if the light mode classes are applied
+    expect(screen.getByText('NIFTY 50').closest('div')).toHaveClass('bg-gray-800 text-black');
+    expect(screen.getByText('SENSEX').closest('div')).toHaveClass('bg-gray-800 text-black');
+  });
+});
