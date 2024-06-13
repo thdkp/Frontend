@@ -1,0 +1,67 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
+import configureStore from 'redux-mock-store';
+import Home from './Home'; // Adjust the import path as needed
+import { selectIsDarkMode } from '../redux/slices/themeSlice';
+
+// Mocking the components that Home depends on
+jest.mock('../components/MarketStatus', () => () => <div>MarketStatus Component</div>);
+jest.mock('../components/MarketSectors', () => () => <div>MarketSectors Component</div>);
+jest.mock('../components/GetStarted', () => () => <div>GetStarted Component</div>);
+jest.mock('../components/News', () => () => <div>News Component</div>);
+jest.mock('../components/TodaysStocks', () => () => <div>TodaysStocks Component</div>);
+
+const mockStore = configureStore([]);
+
+describe('Home component', () => {
+  let store;
+
+  beforeEach(() => {
+    store = mockStore({
+      theme: {
+        isDarkMode: false
+      }
+    });
+  });
+
+  it('renders Home component correctly in light mode', () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <Home />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText('MarketStatus Component')).toBeInTheDocument();
+    expect(screen.getByText('MarketSectors Component')).toBeInTheDocument();
+    expect(screen.getByText('GetStarted Component')).toBeInTheDocument();
+    expect(screen.getByText('News Component')).toBeInTheDocument();
+    expect(screen.getByText('TodaysStocks Component')).toBeInTheDocument();
+  });
+
+  it('renders Home component correctly in dark mode', () => {
+    store = mockStore({
+      theme: {
+        isDarkMode: true
+      }
+    });
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <Home />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText('MarketStatus Component')).toBeInTheDocument();
+    expect(screen.getByText('MarketSectors Component')).toBeInTheDocument();
+    expect(screen.getByText('GetStarted Component')).toBeInTheDocument();
+    expect(screen.getByText('News Component')).toBeInTheDocument();
+    expect(screen.getByText('TodaysStocks Component')).toBeInTheDocument();
+    expect(screen.getByTestId('home-container')).toHaveClass('dark:bg-gray-900');
+  });
+});
