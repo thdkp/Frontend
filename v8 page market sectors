@@ -1,0 +1,90 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import MarketSectorsPage from './MarketSectorsPage'; // Adjust the import path as needed
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import '@testing-library/jest-dom/extend-expect';
+import DetailedView from '../components/DetailedView';
+import MarketStatus from '../components/MarketStatus';
+
+// Mock the components that MarketSectorsPage depends on
+jest.mock('../components/DetailedView', () => ({ sector, onClose }) => (
+  <div data-testid="detailed-view">
+    <p>{sector.name}</p>
+    <button onClick={onClose}>Close</button>
+  </div>
+));
+
+jest.mock('../components/MarketStatus', () => () => <div>MarketStatus Component</div>);
+
+const mockStore = configureStore([]);
+
+const dummyData = [
+  { name: 'NIFTY 50', value: 22550.40, change: 0.27, description: 'Nifty 50 is a well diversified 50 stock index.', oneMonthReturn: 3.11, oneYearReturn: 25.12, high: 23338.70, low: 18531.95, constituents: 50, etfs: 24, marketCapShare: 43.44 },
+  { name: 'USD/INR', value: 83.52, change: 0.19, description: 'USD to INR exchange rate.', oneMonthReturn: 0.5, oneYearReturn: 1.2, high: 84, low: 82, constituents: 0, etfs: 0, marketCapShare: 0 },
+  { name: 'Gold', value: 7385.95, change: -0.07, description: 'Gold price in INR per gram.', oneMonthReturn: -0.5, oneYearReturn: 2.1, high: 7500, low: 7200, constituents: 0, etfs: 0, marketCapShare: 0 },
+];
+
+describe('MarketSectorsPage component', () => {
+  let store;
+
+  beforeEach(() => {
+    store = mockStore({
+      theme: {
+        isDarkMode: false
+      }
+    });
+  });
+
+  it('renders MarketSectorsPage component correctly', () => {
+    render(
+      <Provider store={store}>
+        <MarketSectorsPage />
+      </Provider>
+    );
+
+    expect(screen.getByText('MarketStatus Component')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+  });
+
+  it('displays the correct number of rows in the table', () => {
+    render(
+      <Provider store={store}>
+        <MarketSectorsPage />
+      </Provider>
+    );
+
+    const rows = screen.getAllByRole('row');
+    expect(rows).toHaveLength(dummyData.length + 1); // +1 for header row
+  });
+
+  it('opens DetailedView when a row is clicked', () => {
+    render(
+      <Provider store={store}>
+        <MarketSectorsPage />
+      </Provider>
+    );
+
+    const firstRow = screen.getAllByRole('row')[1];
+    fireEvent.click(firstRow);
+
+    expect(screen.getByTestId('detailed-view')).toBeInTheDocument();
+    expect(screen.getByText('NIFTY 50')).toBeInTheDocument();
+  });
+
+  it('closes DetailedView when the close button is clicked', () => {
+    render(
+      <Provider store={store}>
+        <MarketSectorsPage />
+      </Provider>
+    );
+
+    const firstRow = screen.getAllByRole('row')[1];
+    fireEvent.click(firstRow);
+
+    const closeButton = screen.getByText('Close');
+    fireEvent.click(closeButton);
+
+    expect(screen.queryByTestId('detailed-view')).not.toBeInTheDocument();
+  });
+});
