@@ -1,0 +1,86 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import EditStockUniverse from './EditStockUniverse'; // Adjust the import path as needed
+
+describe('EditStockUniverse component', () => {
+  it('renders EditStockUniverse component correctly', async () => {
+    render(
+      <MemoryRouter>
+        <EditStockUniverse />
+      </MemoryRouter>
+    );
+
+    // Wait for stock data to load
+    await waitFor(() => {
+      expect(screen.getByText('Universe of Stocks')).toBeInTheDocument();
+    });
+
+    // Check if table headers are rendered
+    expect(screen.getByText('Stock Name')).toBeInTheDocument();
+    expect(screen.getByText('Stock Symbol')).toBeInTheDocument();
+    expect(screen.getByText('Sector')).toBeInTheDocument();
+    expect(screen.getByText('Opening Value')).toBeInTheDocument();
+    expect(screen.getByText('Closing Value')).toBeInTheDocument();
+    expect(screen.getByText('% Change')).toBeInTheDocument();
+    expect(screen.getByText('Actions')).toBeInTheDocument();
+  });
+
+  it('opens edit modal on Edit button click', async () => {
+    render(
+      <MemoryRouter>
+        <EditStockUniverse />
+      </MemoryRouter>
+    );
+
+    // Wait for stock data to load
+    await waitFor(() => {
+      expect(screen.getByText('Universe of Stocks')).toBeInTheDocument();
+    });
+
+    // Find and click the Edit button for the first stock
+    const editButton = screen.getAllByText('Edit')[0];
+    fireEvent.click(editButton);
+
+    // Check if modal is opened
+    expect(screen.getByText('Edit Stock')).toBeInTheDocument();
+    expect(screen.getByLabelText('Opening Value')).toBeInTheDocument();
+    expect(screen.getByLabelText('Closing Value')).toBeInTheDocument();
+  });
+
+  it('updates stock data on modal save', async () => {
+    render(
+      <MemoryRouter>
+        <EditStockUniverse />
+      </MemoryRouter>
+    );
+
+    // Wait for stock data to load
+    await waitFor(() => {
+      expect(screen.getByText('Universe of Stocks')).toBeInTheDocument();
+    });
+
+    // Find and click the Edit button for the first stock
+    const editButton = screen.getAllByText('Edit')[0];
+    fireEvent.click(editButton);
+
+    // Simulate editing the opening and closing prices
+    const openingPriceInput = screen.getByLabelText('Opening Value');
+    const closingPriceInput = screen.getByLabelText('Closing Value');
+    fireEvent.change(openingPriceInput, { target: { value: '150' } });
+    fireEvent.change(closingPriceInput, { target: { value: '200' } });
+
+    // Find and click the Save button in the modal
+    const saveButton = screen.getByText('Save');
+    fireEvent.click(saveButton);
+
+    // Wait for the modal to close
+    await waitFor(() => {
+      expect(screen.queryByText('Edit Stock')).not.toBeInTheDocument();
+    });
+
+    // Check if the stock data is updated in the table
+    expect(screen.getByText('150.00')).toBeInTheDocument();
+    expect(screen.getByText('200.00')).toBeInTheDocument();
+  });
+});
