@@ -4,14 +4,23 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import configureStore from 'redux-mock-store';
 import Home from './Home'; // Adjust the import path as needed
-import { selectIsDarkMode } from '../redux/slices/themeSlice';
 
 // Mocking the components that Home depends on
-jest.mock('../components/MarketStatus', () => () => <div>MarketStatus Component</div>);
-jest.mock('../components/MarketSectors', () => () => <div>MarketSectors Component</div>);
-jest.mock('../components/GetStarted', () => () => <div>GetStarted Component</div>);
-jest.mock('../components/News', () => () => <div>News Component</div>);
-jest.mock('../components/TodaysStocks', () => () => <div>TodaysStocks Component</div>);
+vi.mock('../components/MarketStatus', () => ({
+  default: () => <div role="contentinfo" data-testid="market-status">MarketStatus Component</div>,
+}));
+vi.mock('../components/MarketSectors', () => ({
+  default: () => <div role="contentinfo" data-testid="market-sectors">MarketSectors Component</div>,
+}));
+vi.mock('../components/GetStarted', () => ({
+  default: () => <div role="contentinfo" data-testid="get-started">GetStarted Component</div>,
+}));
+vi.mock('../components/News', () => ({
+  default: () => <div role="contentinfo" data-testid="news">News Component</div>,
+}));
+vi.mock('../components/TodaysStocks', () => ({
+  default: () => <div role="contentinfo" data-testid="todays-stocks">TodaysStocks Component</div>,
+}));
 
 const mockStore = configureStore([]);
 
@@ -21,8 +30,8 @@ describe('Home component', () => {
   beforeEach(() => {
     store = mockStore({
       theme: {
-        isDarkMode: false
-      }
+        isDarkMode: false,
+      },
     });
   });
 
@@ -35,18 +44,19 @@ describe('Home component', () => {
       </Provider>
     );
 
-    expect(screen.getByText('MarketStatus Component')).toBeInTheDocument();
-    expect(screen.getByText('MarketSectors Component')).toBeInTheDocument();
-    expect(screen.getByText('GetStarted Component')).toBeInTheDocument();
-    expect(screen.getByText('News Component')).toBeInTheDocument();
-    expect(screen.getByText('TodaysStocks Component')).toBeInTheDocument();
+    // Use data-testid attributes for assertions
+    expect(screen.getByTestId('market-status')).toBeInTheDocument();
+    expect(screen.getByTestId('market-sectors')).toBeInTheDocument();
+    expect(screen.getByTestId('get-started')).toBeInTheDocument();
+    expect(screen.getByTestId('news')).toBeInTheDocument();
+    expect(screen.getByTestId('todays-stocks')).toBeInTheDocument();
   });
 
   it('renders Home component correctly in dark mode', () => {
     store = mockStore({
       theme: {
-        isDarkMode: true
-      }
+        isDarkMode: true,
+      },
     });
 
     render(
@@ -57,11 +67,12 @@ describe('Home component', () => {
       </Provider>
     );
 
-    expect(screen.getByText('MarketStatus Component')).toBeInTheDocument();
-    expect(screen.getByText('MarketSectors Component')).toBeInTheDocument();
-    expect(screen.getByText('GetStarted Component')).toBeInTheDocument();
-    expect(screen.getByText('News Component')).toBeInTheDocument();
-    expect(screen.getByText('TodaysStocks Component')).toBeInTheDocument();
+    // Use data-testid attributes for assertions
+    expect(screen.getByTestId('market-status')).toBeInTheDocument();
+    expect(screen.getByTestId('market-sectors')).toBeInTheDocument();
+    expect(screen.getByTestId('get-started')).toBeInTheDocument();
+    expect(screen.getByTestId('news')).toBeInTheDocument();
+    expect(screen.getByTestId('todays-stocks')).toBeInTheDocument();
     expect(screen.getByTestId('home-container')).toHaveClass('dark:bg-gray-900');
   });
 });
