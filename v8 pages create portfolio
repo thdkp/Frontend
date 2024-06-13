@@ -1,0 +1,130 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createMemoryHistory } from 'history';
+import { Router } from 'react-router-dom';
+import CreatePortfolio from './CreatePortfolio'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('CreatePortfolio component', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/portfolio/create')) {
+        return Promise.resolve({
+          json: () => Promise.resolve({ message: 'Portfolio created successfully' }),
+        });
+      }
+    });
+  });
+
+  afterEach(() => {
+    global.fetch.mockClear();
+  });
+
+  it('renders CreatePortfolio component correctly', () => {
+    render(
+      <Router history={createMemoryHistory()}>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    expect(screen.getByText('Create Portfolio')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter the portfolio name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter the portfolio description')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter the capital amount')).toBeInTheDocument();
+    expect(screen.getByRole('slider')).toBeInTheDocument();
+  });
+
+  it('handles input changes correctly', () => {
+    render(
+      <Router history={createMemoryHistory()}>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    const portfolioNameInput = screen.getByPlaceholderText('Enter the portfolio name');
+    const descriptionInput = screen.getByPlaceholderText('Enter the portfolio description');
+    const capitalInput = screen.getByPlaceholderText('Enter the capital amount');
+    const slider = screen.getByRole('slider');
+
+    fireEvent.change(portfolioNameInput, { target: { value: 'Test Portfolio' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Test Description' } });
+    fireEvent.change(capitalInput, { target: { value: '1000' } });
+    fireEvent.change(slider, { target: { value: '70' } });
+
+    expect(portfolioNameInput.value).toBe('Test Portfolio');
+    expect(descriptionInput.value).toBe('Test Description');
+    expect(capitalInput.value).toBe('1000');
+    expect(slider.value).toBe('70');
+  });
+
+  it('handles form submission correctly', async () => {
+    render(
+      <Router history={createMemoryHistory()}>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    const portfolioNameInput = screen.getByPlaceholderText('Enter the portfolio name');
+    const descriptionInput = screen.getByPlaceholderText('Enter the portfolio description');
+    const capitalInput = screen.getByPlaceholderText('Enter the capital amount');
+    const slider = screen.getByRole('slider');
+    const submitButton = screen.getByText('Create Portfolio');
+
+    fireEvent.change(portfolioNameInput, { target: { value: 'Test Portfolio' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Test Description' } });
+    fireEvent.change(capitalInput, { target: { value: '1000' } });
+    fireEvent.change(slider, { target: { value: '70' } });
+
+    userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/portfolio/create'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            accesstoken: sessionStorage.getItem('accessToken'),
+          }),
+          body: JSON.stringify({
+            portfolioName: 'Test Portfolio',
+            description: 'Test Description',
+            capital: '1000',
+            riskAppetite: '70',
+          }),
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Create Portfolio')).not.toBeInTheDocument();
+    });
+  });
+
+  it('navigates to /portfolio on successful form submission', async () => {
+    const history = createMemoryHistory();
+    render(
+      <Router history={history}>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    const portfolioNameInput = screen.getByPlaceholderText('Enter the portfolio name');
+    const descriptionInput = screen.getByPlaceholderText('Enter the portfolio description');
+    const capitalInput = screen.getByPlaceholderText('Enter the capital amount');
+    const slider = screen.getByRole('slider');
+    const submitButton = screen.getByText('Create Portfolio');
+
+    fireEvent.change(portfolioNameInput, { target: { value: 'Test Portfolio' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Test Description' } });
+    fireEvent.change(capitalInput, { target: { value: '1000' } });
+    fireEvent.change(slider, { target: { value: '70' } });
+
+    userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(history.location.pathname).toBe('/portfolio');
+    });
+  });
+});
