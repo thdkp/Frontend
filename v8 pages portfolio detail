@@ -1,0 +1,189 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import configureStore from 'redux-mock-store';
+import PortfolioDetail from './PortfolioDetail'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+// Mock the components that PortfolioDetail depends on
+vi.mock('../components/PortfolioDiversity', () => ({
+  default: ({ portfolio }) => <div data-testid="portfolio-diversity">{portfolio?.name}</div>,
+}));
+vi.mock('../components/ChartDisplay', () => ({
+  default: ({ portfolio }) => <div data-testid="chart-display">{portfolio?.name}</div>,
+}));
+vi.mock('../components/AuthError', () => ({
+  default: () => <div data-testid="auth-error">AuthError Component</div>,
+}));
+vi.mock('../components/Loader', () => ({
+  default: () => <div data-testid="loader">Loader Component</div>,
+}));
+vi.mock('../components/ModalLoader', () => ({
+  default: () => <div data-testid="modal-loader">ModalLoader Component</div>,
+}));
+vi.mock('../components/AcceptRejectPortfolioModal', () => ({
+  default: ({
+    isOpen,
+    onClose,
+    profitLoss,
+    capital,
+    worth,
+    allocation,
+    diversity,
+    riskAppetite,
+    onAccept,
+    onReject,
+  }) => (
+    <div data-testid="accept-reject-portfolio-modal">
+      Modal Open: {isOpen.toString()}
+      <button onClick={onAccept}>Accept</button>
+      <button onClick={onReject}>Reject</button>
+    </div>
+  ),
+}));
+
+const mockStore = configureStore([]);
+
+const mockPortfolioData = [
+  {
+    portfolioid: 1,
+    name: 'Portfolio 1',
+    riskAppetite: 50,
+    stocks: [
+      { stocksymbol: 'AAPL', allocation: 40 },
+      { stocksymbol: 'GOOGL', allocation: 60 },
+    ],
+    profitLoss: '10%',
+    capital: 100000,
+    worth: 110000,
+    allocation: { AAPL: 40, GOOGL: 60 },
+  },
+];
+
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve(mockPortfolioData),
+  })
+);
+
+describe('PortfolioDetail component', () => {
+  let store;
+
+  beforeEach(() => {
+    store = mockStore({
+      auth: {
+        isAuthenticated: true,
+        user: { name: 'Test User' },
+      },
+    });
+
+    fetch.mockClear();
+  });
+
+  it('renders PortfolioDetail component correctly when authenticated and portfolio data is loaded', async () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/portfolio/1']}>
+          <Routes>
+            <Route path="/portfolio/:id" element={<PortfolioDetail />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      screen.getByTestId('chart-display');
+      screen.getByTestId('portfolio-diversity');
+    });
+
+    expect(screen.getByText('Stocks in Portfolio 1')).toBeDefined();
+    expect(screen.getByText('AAPL')).toBeDefined();
+  });
+
+  it('renders Loader component when portfolio data is not yet loaded', async () => {
+    fetch.mockImplementationOnce(() => new Promise(() => {}));
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/portfolio/1']}>
+          <Routes>
+            <Route path="/portfolio/:id" element={<PortfolioDetail />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      screen.getByTestId('loader');
+    });
+  });
+
+  it('renders AuthError component when not authenticated', async () => {
+    store = mockStore({
+      auth: {
+        isAuthenticated: false,
+        user: null,
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/portfolio/1']}>
+          <Routes>
+            <Route path="/portfolio/:id" element={<PortfolioDetail />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      screen.getByTestId('auth-error');
+    });
+  });
+
+  it('opens modal on rebalance click and handles accept and reject', async () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/portfolio/1']}>
+          <Routes>
+            <Route path="/portfolio/:id" element={<PortfolioDetail />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    fireEvent.click(screen.getByText('Rebalance Portfolio'));
+
+    await waitFor(() => {
+      screen.getByTestId('modal-loader');
+    });
+
+    // Simulate the modal loader finishing
+    render(
+      <div>
+        <AcceptRejectPortfolioModal
+          isOpen={true}
+          onClose={() => {}}
+          profitLoss={'10%'}
+          capital={100000}
+          worth={110000}
+          allocation={JSON.stringify({ AAPL: 40, GOOGL: 60 }, null, 2)}
+          diversity="Diverse across multiple sectors"
+          riskAppetite="50%"
+          onAccept={() => {}}
+          onReject={() => {}}
+        />
+      </div>
+    );
+
+    screen.getByTestId('accept-reject-portfolio-modal');
+
+    fireEvent.click(screen.getByText('Accept'));
+    fireEvent.click(screen.getByText('Reject'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('accept-reject-portfolio-modal')).toBeNull();
+    });
+  });
+});
