@@ -1,0 +1,89 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import Portfolio from './Portfolio'; // Adjust the import path as needed
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import { vi } from 'vitest';
+
+// Mock the components that Portfolio depends on
+vi.mock('../components/PortfolioTable', () => ({
+  default: ({ portfolios, onSelectPortfolio }) => (
+    <div data-testid="portfolio-table">
+      {portfolios.map((portfolio) => (
+        <div key={portfolio.portfolioid} onClick={() => onSelectPortfolio(portfolio.portfolioid)}>
+          {portfolio.name}
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock('../components/PortfolioDiversity', () => ({
+  default: ({ portfolio }) => (
+    <div data-testid="portfolio-diversity">{portfolio.name}</div>
+  ),
+}));
+
+vi.mock('../components/AuthError', () => ({
+  default: () => <div data-testid="auth-error">AuthError Component</div>,
+}));
+
+const mockStore = configureStore([]);
+
+const dummyData = [
+  { portfolioid: 1, name: 'Portfolio 1', details: 'Details of Portfolio 1' },
+  { portfolioid: 2, name: 'Portfolio 2', details: 'Details of Portfolio 2' },
+];
+
+describe('Portfolio component', () => {
+  let store;
+
+  beforeEach(() => {
+    store = mockStore({
+      auth: {
+        isAuthenticated: true,
+        user: { name: 'Test User' }
+      }
+    });
+  });
+
+  it('renders Portfolio component correctly when authenticated', () => {
+    render(
+      <Provider store={store}>
+        <Portfolio />
+      </Provider>
+    );
+
+    expect(screen.queryByTestId('portfolio-table')).toBeInTheDocument();
+  });
+
+  it('displays portfolio diversity when a portfolio is selected', () => {
+    render(
+      <Provider store={store}>
+        <Portfolio />
+      </Provider>
+    );
+
+    const portfolioItems = screen.getAllByText(/Portfolio \d/);
+    fireEvent.click(portfolioItems[0]);
+
+    expect(screen.queryByTestId('portfolio-diversity')).toHaveTextContent('Portfolio 1');
+  });
+
+  it('renders AuthError component when not authenticated', () => {
+    store = mockStore({
+      auth: {
+        isAuthenticated: false,
+        user: null
+      }
+    });
+
+    render(
+      <Provider store={store}>
+        <Portfolio />
+      </Provider>
+    );
+
+    expect(screen.queryByTestId('auth-error')).toBeInTheDocument();
+  });
+});
