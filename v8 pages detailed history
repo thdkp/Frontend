@@ -1,0 +1,45 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import DetailedHistoryPage from './DetailedHistoryPage'; // Adjust the import path as needed
+
+describe('DetailedHistoryPage component', () => {
+  it('renders DetailedHistoryPage component correctly', () => {
+    render(
+      <MemoryRouter initialEntries={['/details/ExampleIndex']}>
+        <Routes>
+          <Route path="/details/:name" element={<DetailedHistoryPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('ExampleIndex Details')).toBeInTheDocument();
+    expect(screen.getByText('Index: ExampleIndex')).toBeInTheDocument();
+    expect(screen.getByText('Largecap: This index consists of largecap companies')).toBeInTheDocument();
+    expect(screen.getByText('Low Risk: This is the benchmark market index')).toBeInTheDocument();
+  });
+
+  it('renders chart with correct data', () => {
+    render(
+      <MemoryRouter initialEntries={['/details/ExampleIndex']}>
+        <Routes>
+          <Route path="/details/:name" element={<DetailedHistoryPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const canvas = screen.getByRole('img'); // Chart.js uses a canvas element
+    expect(canvas).toBeInTheDocument();
+
+    // Check if chart data labels and dataset are rendered correctly
+    const chartDataLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    chartDataLabels.forEach(label => {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    });
+
+    const chartDataValues = [100, 200, 150, 300, 250, 400];
+    chartDataValues.forEach(value => {
+      expect(screen.getByText(value.toString())).toBeInTheDocument();
+    });
+  });
+});
