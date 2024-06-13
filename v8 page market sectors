@@ -3,19 +3,23 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import MarketSectorsPage from './MarketSectorsPage'; // Adjust the import path as needed
 import { Provider } from 'react-redux';
 import configureStore from 'redux-mock-store';
-import '@testing-library/jest-dom/extend-expect';
+import { vi } from 'vitest';
 import DetailedView from '../components/DetailedView';
 import MarketStatus from '../components/MarketStatus';
 
 // Mock the components that MarketSectorsPage depends on
-jest.mock('../components/DetailedView', () => ({ sector, onClose }) => (
-  <div data-testid="detailed-view">
-    <p>{sector.name}</p>
-    <button onClick={onClose}>Close</button>
-  </div>
-));
+vi.mock('../components/DetailedView', () => ({
+  default: ({ sector, onClose }) => (
+    <div data-testid="detailed-view">
+      <p>{sector.name}</p>
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
 
-jest.mock('../components/MarketStatus', () => () => <div>MarketStatus Component</div>);
+vi.mock('../components/MarketStatus', () => ({
+  default: () => <div data-testid="market-status">MarketStatus Component</div>,
+}));
 
 const mockStore = configureStore([]);
 
@@ -31,8 +35,8 @@ describe('MarketSectorsPage component', () => {
   beforeEach(() => {
     store = mockStore({
       theme: {
-        isDarkMode: false
-      }
+        isDarkMode: false,
+      },
     });
   });
 
@@ -43,8 +47,8 @@ describe('MarketSectorsPage component', () => {
       </Provider>
     );
 
-    expect(screen.getByText('MarketStatus Component')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+    expect(screen.queryByTestId('market-status')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Search...')).toBeInTheDocument();
   });
 
   it('displays the correct number of rows in the table', () => {
@@ -55,7 +59,7 @@ describe('MarketSectorsPage component', () => {
     );
 
     const rows = screen.getAllByRole('row');
-    expect(rows).toHaveLength(dummyData.length + 1); // +1 for header row
+    expect(rows.length).toBe(dummyData.length + 1); // +1 for header row
   });
 
   it('opens DetailedView when a row is clicked', () => {
@@ -68,8 +72,8 @@ describe('MarketSectorsPage component', () => {
     const firstRow = screen.getAllByRole('row')[1];
     fireEvent.click(firstRow);
 
-    expect(screen.getByTestId('detailed-view')).toBeInTheDocument();
-    expect(screen.getByText('NIFTY 50')).toBeInTheDocument();
+    expect(screen.queryByTestId('detailed-view')).toBeInTheDocument();
+    expect(screen.queryByText('NIFTY 50')).toBeInTheDocument();
   });
 
   it('closes DetailedView when the close button is clicked', () => {
@@ -82,7 +86,7 @@ describe('MarketSectorsPage component', () => {
     const firstRow = screen.getAllByRole('row')[1];
     fireEvent.click(firstRow);
 
-    const closeButton = screen.getByText('Close');
+    const closeButton = screen.queryByText('Close');
     fireEvent.click(closeButton);
 
     expect(screen.queryByTestId('detailed-view')).not.toBeInTheDocument();
