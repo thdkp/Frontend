@@ -1,0 +1,99 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import StockUniverse from './StockUniverse'; // Adjust the import path as needed
+import { vi } from 'vitest';
+import { act } from 'react-dom/test-utils';
+
+// Mock fetch response
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve([
+      { stocksymbol: 'AAPL', price: 150, change: '+1%' },
+      { stocksymbol: 'GOOGL', price: 2800, change: '-0.5%' },
+      { stocksymbol: 'AMZN', price: 3400, change: '+2%' },
+    ]),
+  })
+);
+
+describe('StockUniverse component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders StockUniverse component correctly', async () => {
+    await act(async () => {
+      render(<StockUniverse />);
+    });
+
+    // Check if the title and search input are rendered
+    expect(screen.getByText('Universe of Stocks')).toBeDefined();
+    expect(screen.getByPlaceholderText('Search stocks...')).toBeDefined();
+
+    // Check if the table headers are rendered
+    expect(screen.getByText('Stock Symbol')).toBeDefined();
+    expect(screen.getByText('Value')).toBeDefined();
+    expect(screen.getByText('% Change')).toBeDefined();
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('AAPL')).toBeDefined());
+    expect(screen.getByText('150')).toBeDefined();
+    expect(screen.getByText('+1%')).toBeDefined();
+    expect(screen.getByText('GOOGL')).toBeDefined();
+    expect(screen.getByText('2800')).toBeDefined();
+    expect(screen.getByText('-0.5%')).toBeDefined();
+    expect(screen.getByText('AMZN')).toBeDefined();
+    expect(screen.getByText('3400')).toBeDefined();
+    expect(screen.getByText('+2%')).toBeDefined();
+  });
+
+  it('handles global search filter', async () => {
+    await act(async () => {
+      render(<StockUniverse />);
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('AAPL')).toBeDefined());
+
+    // Enter a search term
+    fireEvent.change(screen.getByPlaceholderText('Search stocks...'), { target: { value: 'GOOGL' } });
+
+    // Check if only the filtered row is displayed
+    await waitFor(() => expect(screen.queryByText('AAPL')).toBeNull());
+    expect(screen.getByText('GOOGL')).toBeDefined();
+  });
+
+  it('handles pagination', async () => {
+    await act(async () => {
+      render(<StockUniverse />);
+    });
+
+    // Check if pagination controls are rendered
+    expect(screen.getByText('Previous')).toBeDefined();
+    expect(screen.getByText('Next')).toBeDefined();
+
+    // Click on the Next button (if it exists in your data)
+    fireEvent.click(screen.getByText('Next'));
+
+    // Check if the appropriate page is displayed (based on your data and pagination implementation)
+    // Since our data is small, the 'Next' button should be disabled
+    await waitFor(() => expect(screen.getByText('Next')).toBeDisabled());
+  });
+
+  it('handles sorting', async () => {
+    await act(async () => {
+      render(<StockUniverse />);
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('AAPL')).toBeDefined());
+
+    // Click on the 'Value' header to sort by price
+    fireEvent.click(screen.getByText('Value'));
+
+    // Check if the table is sorted by price (ascending or descending based on your implementation)
+    const rows = screen.getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('AAPL');  // Assuming ascending order
+    expect(rows[2]).toHaveTextContent('GOOGL');
+    expect(rows[3]).toHaveTextContent('AMZN');
+  });
+});
