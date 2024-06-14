@@ -10,8 +10,10 @@ describe('StockMarquee component', () => {
     { stocksymbol: 'INDIGO', price: 4189.05, change: 0.65 }
   ];
 
-  vi.mock({
-    fetch: () => Promise.resolve({ json: () => Promise.resolve(mockStockData) })
+  beforeEach(() => {
+    vi.mock({
+      fetch: () => Promise.resolve({ json: () => Promise.resolve(mockStockData) })
+    });
   });
 
   it('renders stock marquee correctly', async () => {
