@@ -1,0 +1,71 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import AcceptRejectPortfolioModal from './AcceptRejectPortfolioModal'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('AcceptRejectPortfolioModal component', () => {
+  it('renders modal correctly', () => {
+    const mockOnAccept = vi.fn();
+    const mockOnReject = vi.fn();
+
+    render(
+      <AcceptRejectPortfolioModal
+        isOpen={true}
+        onClose={() => {}}
+        profitLoss={1000}
+        capital={50000}
+        worth={70000}
+        allocation="Stocks, Bonds"
+        diversity="High"
+        riskAppetite={70}
+        onAccept={mockOnAccept}
+        onReject={mockOnReject}
+      />
+    );
+
+    // Check if modal content is rendered correctly
+    expect(screen.getByText('Portfolio Details')).toBeDefined();
+    expect(screen.getByText('Profit/Loss: 1000')).toBeDefined();
+    expect(screen.getByText('Capital: 50000')).toBeDefined();
+    expect(screen.getByText('Worth: 70000')).toBeDefined();
+    expect(screen.getByText('Allocation: Stocks, Bonds')).toBeDefined();
+    expect(screen.getByText('Risk: 70')).toBeDefined();
+    expect(screen.getByText('Portfolio Diversity')).toBeDefined();
+    expect(screen.getByText('High')).toBeDefined();
+
+    // Check if buttons are rendered and clickable
+    const acceptButton = screen.getByText('Accept');
+    const rejectButton = screen.getByText('Reject');
+    expect(acceptButton).toBeDefined();
+    expect(rejectButton).toBeDefined();
+
+    // Simulate button clicks
+    fireEvent.click(acceptButton);
+    fireEvent.click(rejectButton);
+
+    // Check if handlers are called
+    expect(mockOnAccept).toHaveBeenCalledTimes(1);
+    expect(mockOnReject).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render when isOpen is false', () => {
+    const { container } = render(
+      <AcceptRejectPortfolioModal
+        isOpen={false}
+        onClose={() => {}}
+        profitLoss={1000}
+        capital={50000}
+        worth={70000}
+        allocation="Stocks, Bonds"
+        diversity="High"
+        riskAppetite={70}
+        onAccept={() => {}}
+        onReject={() => {}}
+      />
+    );
+
+    // Check if the modal content is not in the document
+    const modal = container.querySelector('.fixed.inset-0');
+    expect(modal).toBeNull();
+  });
+});
