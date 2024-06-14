@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Provider, useSelector, useDispatch } from 'react-redux';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import PortfolioTable from './PortfolioTable'; // Adjust the import path as needed
 import { vi } from 'vitest';
 
@@ -10,8 +10,8 @@ vi.mock('react-redux', () => {
   const actualReactRedux = vi.importActual('react-redux');
   return {
     ...actualReactRedux,
-    useSelector: (selector) => selector(mockStore.getState()),
-    useDispatch: () => mockStore.dispatch,
+    useSelector: vi.fn(),
+    useDispatch: vi.fn(),
   };
 });
 
@@ -20,8 +20,7 @@ vi.mock('react-router-dom', () => {
   const actualReactRouterDom = vi.importActual('react-router-dom');
   return {
     ...actualReactRouterDom,
-    useNavigate: () => vi.fn(),
-  };
+    useNavigate: vi.fn(),
 });
 
 describe('PortfolioTable component', () => {
@@ -57,6 +56,15 @@ describe('PortfolioTable component', () => {
     subscribe: () => {},
     dispatch: () => {}
   };
+
+  beforeEach(() => {
+    useSelector.mockImplementation((selector) => selector(mockStore.getState()));
+    useDispatch.mockImplementation(() => mockStore.dispatch);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('renders portfolio table correctly when authenticated', () => {
     render(
@@ -104,6 +112,8 @@ describe('PortfolioTable component', () => {
   });
 
   it('renders authentication error when not authenticated', () => {
+    useSelector.mockImplementation((selector) => selector(notAuthenticatedStore.getState()));
+
     render(
       <Provider store={notAuthenticatedStore}>
         <MemoryRouter>
