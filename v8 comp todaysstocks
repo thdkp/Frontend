@@ -1,0 +1,92 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import TodaysStocks from './TodaysStocks'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('TodaysStocks component', () => {
+  const mockData = {
+    gainers: [
+      { stockname: 'Stock A', stocksymbol: 'STK-A', price: 100.00, change: 5.00 },
+      { stockname: 'Stock B', stocksymbol: 'STK-B', price: 50.00, change: -2.50 }
+    ],
+    losers: [
+      { stockname: 'Stock C', stocksymbol: 'STK-C', price: 75.00, change: -3.50 }
+    ],
+    mostActive: [
+      { stockname: 'Stock D', stocksymbol: 'STK-D', price: 120.00, change: 8.00 },
+      { stockname: 'Stock E', stocksymbol: 'STK-E', price: 90.00, change: -4.00 }
+    ]
+  };
+
+  it('renders stocks correctly', () => {
+    vi.mock({
+      fetch: () => Promise.resolve({ json: () => Promise.resolve(mockData) })
+    });
+
+    render(<TodaysStocks />);
+
+    // Check if the component renders the title
+    expect(screen.getByText("Today's stocks")).toBeDefined();
+
+    // Check if the component renders buttons for Gainers, Losers, and Most Active
+    expect(screen.getByText('Gainers')).toBeDefined();
+    expect(screen.getByText('Losers')).toBeDefined();
+    expect(screen.getByText('Most Active')).toBeDefined();
+
+    // Check if initial data (gainers) renders correctly
+    expect(screen.getByText('Stock A')).toBeDefined();
+    expect(screen.getByText('STK-A')).toBeDefined();
+    expect(screen.getByText('$100.00')).toBeDefined();
+    expect(screen.getByText('▲ 5.00%')).toBeDefined();
+
+    expect(screen.getByText('Stock B')).toBeDefined();
+    expect(screen.getByText('STK-B')).toBeDefined();
+    expect(screen.getByText('$50.00')).toBeDefined();
+    expect(screen.getByText('▼ -2.50%')).toBeDefined();
+  });
+
+  it('renders losers data when Losers button is clicked', async () => {
+    vi.mock({
+      fetch: () => Promise.resolve({ json: () => Promise.resolve(mockData) })
+    });
+
+    render(<TodaysStocks />);
+
+    // Click on the Losers button
+    fireEvent.click(screen.getByText('Losers'));
+
+    // Wait for the component to update with losers data
+    await vi.act(async () => {
+      // Check if the losers data renders correctly
+      expect(screen.getByText('Stock C')).toBeDefined();
+      expect(screen.getByText('STK-C')).toBeDefined();
+      expect(screen.getByText('$75.00')).toBeDefined();
+      expect(screen.getByText('▼ -3.50%')).toBeDefined();
+    });
+  });
+
+  it('renders most active data when Most Active button is clicked', async () => {
+    vi.mock({
+      fetch: () => Promise.resolve({ json: () => Promise.resolve(mockData) })
+    });
+
+    render(<TodaysStocks />);
+
+    // Click on the Most Active button
+    fireEvent.click(screen.getByText('Most Active'));
+
+    // Wait for the component to update with most active data
+    await vi.act(async () => {
+      // Check if the most active data renders correctly
+      expect(screen.getByText('Stock D')).toBeDefined();
+      expect(screen.getByText('STK-D')).toBeDefined();
+      expect(screen.getByText('$120.00')).toBeDefined();
+      expect(screen.getByText('▲ 8.00%')).toBeDefined();
+
+      expect(screen.getByText('Stock E')).toBeDefined();
+      expect(screen.getByText('STK-E')).toBeDefined();
+      expect(screen.getByText('$90.00')).toBeDefined();
+      expect(screen.getByText('▼ -4.00%')).toBeDefined();
+    });
+  });
+});
