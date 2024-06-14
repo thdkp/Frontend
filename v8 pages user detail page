@@ -1,0 +1,113 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import UserDetailPage from './UserDetailPage'; // Adjust the import path as needed
+import { vi } from 'vitest';
+import { act } from 'react-dom/test-utils';
+
+// Mock fetch response
+global.fetch = vi.fn((url, options) => {
+  if (url.includes('/admin/user/')) {
+    return Promise.resolve({
+      json: () => Promise.resolve([
+        { portfolioid: 1, name: 'Portfolio 1', riskappetite: 50, capital: 10000, allocation: { sector: 'Tech' }, stocks: { AAPL: 50 } },
+        { portfolioid: 2, name: 'Portfolio 2', riskappetite: 30, capital: 20000, allocation: { sector: 'Health' }, stocks: { AMZN: 30 } }
+      ]),
+    });
+  }
+  if (url.includes('/portfolio/update/')) {
+    return Promise.resolve({ json: () => Promise.resolve({}) });
+  }
+  return Promise.reject('Unknown URL');
+});
+
+describe('UserDetailPage component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders UserDetailPage component correctly', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/user/1']}>
+          <Routes>
+            <Route path="/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Check if the title is rendered
+    expect(screen.getByText('Portfolios')).toBeDefined();
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('Portfolio 1')).toBeDefined());
+    expect(screen.getByText('50%')).toBeDefined();
+    expect(screen.getByText('10000')).toBeDefined();
+    expect(screen.getByText(JSON.stringify({ sector: 'Tech' }))).toBeDefined();
+    expect(screen.getByText(JSON.stringify({ AAPL: 50 }))).toBeDefined();
+    expect(screen.getByText('Portfolio 2')).toBeDefined();
+    expect(screen.getByText('30%')).toBeDefined();
+    expect(screen.getByText('20000')).toBeDefined();
+    expect(screen.getByText(JSON.stringify({ sector: 'Health' }))).toBeDefined();
+    expect(screen.getByText(JSON.stringify({ AMZN: 30 }))).toBeDefined();
+  });
+
+  it('handles edit portfolio', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/user/1']}>
+          <Routes>
+            <Route path="/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('Portfolio 1')).toBeDefined());
+
+    // Click on the edit button
+    fireEvent.click(screen.getAllByText('Edit')[0]);
+
+    // Check if the modal is rendered
+    expect(screen.getByText('Edit Portfolio')).toBeDefined();
+
+    // Update the form and save
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Updated Portfolio 1' } });
+    fireEvent.change(screen.getByLabelText('Risk Appetite'), { target: { value: 60 } });
+    fireEvent.change(screen.getByLabelText('Capital'), { target: { value: 15000 } });
+    fireEvent.submit(screen.getByText('Save'));
+
+    // Check if the updated portfolio is displayed
+    await waitFor(() => expect(screen.getByText('Updated Portfolio 1')).toBeDefined());
+    expect(screen.getByText('60%')).toBeDefined();
+    expect(screen.getByText('15000')).toBeDefined();
+  });
+
+  it('navigates correctly with buttons', async () => {
+    const mockNavigate = vi.fn();
+    vi.mock('react-router-dom', () => ({
+      ...vi.importActual('react-router-dom'),
+      useNavigate: () => mockNavigate,
+    }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/user/1']}>
+          <Routes>
+            <Route path="/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Click on the 'Edit Stocks' button
+    fireEvent.click(screen.getByText('Edit Stocks'));
+    expect(mockNavigate).toHaveBeenCalledWith('/editstocks');
+
+    // Click on the 'Go to User Portfolio Dashboard' button
+    fireEvent.click(screen.getByText('Go to User Portfolio Dashboard'));
+    expect(mockNavigate).toHaveBeenCalledWith('/userportfoliodashboard');
+  });
+});
