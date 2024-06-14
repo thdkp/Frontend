@@ -1,0 +1,166 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import Users from './Users'; // Adjust the import path as needed
+import { vi } from 'vitest';
+import { act } from 'react-dom/test-utils';
+
+// Mock fetch response
+global.fetch = vi.fn((url, options) => {
+  if (url.includes('/admin/users')) {
+    return Promise.resolve({
+      json: () => Promise.resolve([
+        { userid: 1, name: 'John Doe', email: 'john.doe@example.com', invested: 50000, worth: 70000, profitLoss: 20000, nop: 3 },
+        { userid: 2, name: 'Jane Doe', email: 'jane.doe@example.com', invested: 60000, worth: 80000, profitLoss: 20000, nop: 4 }
+      ]),
+    });
+  }
+  if (url.includes('/portfolio/update/')) {
+    return Promise.resolve({ json: () => Promise.resolve({}) });
+  }
+  return Promise.reject('Unknown URL');
+});
+
+describe('Users component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders Users component correctly', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/users']}>
+          <Routes>
+            <Route path="/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Check if the title is rendered
+    expect(screen.getByText('Users')).toBeDefined();
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('John Doe')).toBeDefined());
+    expect(screen.getByText('john.doe@example.com')).toBeDefined();
+    expect(screen.getByText('50000')).toBeDefined();
+    expect(screen.getByText('70000')).toBeDefined();
+    expect(screen.getByText('20000')).toBeDefined();
+    expect(screen.getByText('3')).toBeDefined();
+    await waitFor(() => expect(screen.getByText('Jane Doe')).toBeDefined());
+    expect(screen.getByText('jane.doe@example.com')).toBeDefined();
+    expect(screen.getByText('60000')).toBeDefined();
+    expect(screen.getByText('80000')).toBeDefined();
+    expect(screen.getByText('20000')).toBeDefined();
+    expect(screen.getByText('4')).toBeDefined();
+  });
+
+  it('handles edit user', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/users']}>
+          <Routes>
+            <Route path="/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('John Doe')).toBeDefined());
+
+    // Click on the edit button
+    fireEvent.click(screen.getAllByText('Edit')[0]);
+
+    // Check if the modal is rendered
+    expect(screen.getByText('Edit User')).toBeDefined();
+
+    // Update the form and save
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Updated John Doe' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'updated.john.doe@example.com' } });
+    fireEvent.submit(screen.getByText('Save'));
+
+    // Check if the updated user is displayed
+    await waitFor(() => expect(screen.getByText('Updated John Doe')).toBeDefined());
+    expect(screen.getByText('updated.john.doe@example.com')).toBeDefined();
+  });
+
+  it('filters users using GlobalFilter', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/users']}>
+          <Routes>
+            <Route path="/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('John Doe')).toBeDefined());
+
+    // Filter by name
+    fireEvent.change(screen.getByPlaceholderText('Search by name'), { target: { value: 'Jane' } });
+
+    // Check if the filtered result is displayed
+    await waitFor(() => expect(screen.getByText('Jane Doe')).toBeDefined());
+    expect(screen.queryByText('John Doe')).toBeNull();
+  });
+
+  it('sorts users by column', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/users']}>
+          <Routes>
+            <Route path="/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('John Doe')).toBeDefined());
+
+    // Sort by 'Total Invested'
+    fireEvent.click(screen.getByText('Total Invested'));
+
+    // Check if the sorted result is displayed correctly
+    const rows = screen.getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('Jane Doe');
+    expect(rows[2]).toHaveTextContent('John Doe');
+
+    // Sort by 'Total Invested' again for descending order
+    fireEvent.click(screen.getByText('Total Invested'));
+
+    // Check if the sorted result is displayed correctly
+    expect(rows[1]).toHaveTextContent('John Doe');
+    expect(rows[2]).toHaveTextContent('Jane Doe');
+  });
+
+  it('navigates to user detail page on row click', async () => {
+    const mockNavigate = vi.fn();
+    vi.mock('react-router-dom', () => ({
+      ...vi.importActual('react-router-dom'),
+      useNavigate: () => mockNavigate,
+    }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/users']}>
+          <Routes>
+            <Route path="/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Wait for the table rows to be rendered
+    await waitFor(() => expect(screen.getByText('John Doe')).toBeDefined());
+
+    // Click on a row
+    fireEvent.click(screen.getByText('John Doe'));
+
+    // Check if navigation occurs
+    expect(mockNavigate).toHaveBeenCalledWith('/user/1');
+  });
+});
