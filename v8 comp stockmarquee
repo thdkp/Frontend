@@ -1,0 +1,38 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import StockMarquee from './StockMarquee'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('StockMarquee component', () => {
+  const mockStockData = [
+    { stocksymbol: 'HDFCBANK', price: 1531.55, change: 1.10 },
+    { stocksymbol: 'HINDUNILVR', price: 2329.05, change: -0.95 },
+    { stocksymbol: 'INDIGO', price: 4189.05, change: 0.65 }
+  ];
+
+  vi.mock({
+    fetch: () => Promise.resolve({ json: () => Promise.resolve(mockStockData) })
+  });
+
+  it('renders stock marquee correctly', async () => {
+    render(<StockMarquee />);
+
+    // Wait for the component to fetch and render stock data
+    const stockElements = await screen.findAllByRole('listitem');
+
+    expect(stockElements).toHaveLength(mockStockData.length);
+
+    // Check if each stock element renders correctly
+    mockStockData.forEach((stock, index) => {
+      const stockElement = stockElements[index];
+      expect(stockElement).toHaveTextContent(stock.stocksymbol);
+      expect(stockElement).toHaveTextContent(stock.price.toFixed(2));
+      expect(stockElement).toHaveTextContent(`${stock.change}%`);
+      if (stock.change >= 0) {
+        expect(stockElement).toHaveClass('text-green-500');
+      } else {
+        expect(stockElement).toHaveClass('text-red-500');
+      }
+    });
+  });
+});
