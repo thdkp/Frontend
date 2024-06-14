@@ -1,0 +1,103 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
+import PortfolioTable from './PortfolioTable'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('PortfolioTable component', () => {
+  const mockPortfolios = [
+    { portfolioid: 1, name: 'Portfolio 1', profitLoss: 100, capital: 1000, worth: 1100 },
+    { portfolioid: 2, name: 'Portfolio 2', profitLoss: -50, capital: 500, worth: 450 }
+  ];
+
+  const mockStore = {
+    getState: () => ({
+      auth: {
+        isAuthenticated: true,
+        user: { /* Mock user data as needed */ }
+      }
+    }),
+    subscribe: () => {},
+    dispatch: () => {}
+  };
+
+  vi.mock({
+    'react-redux': () => ({
+      Provider: ({ children }) => <>{children}</>,
+      useSelector: () => mockStore.getState(),
+      useDispatch: () => mockStore.dispatch,
+    }),
+    'react-router-dom': () => ({
+      MemoryRouter: ({ children }) => <>{children}</>,
+      // You may mock other components or hooks from react-router-dom as needed
+    }),
+  });
+
+  it('renders portfolio table correctly when authenticated', () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter>
+          <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Check if table header and rows are rendered
+    expect(screen.getByText('Portfolio Table')).toBeInTheDocument();
+    expect(screen.getByText('Profit/Loss')).toBeInTheDocument();
+    expect(screen.getByText('Invested')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio Worth')).toBeInTheDocument();
+
+    // Check if portfolio data is correctly rendered
+    mockPortfolios.forEach(portfolio => {
+      expect(screen.getByText(portfolio.name)).toBeInTheDocument();
+      expect(screen.getByText(portfolio.profitLoss.toString())).toBeInTheDocument();
+      expect(screen.getByText(portfolio.capital.toString())).toBeInTheDocument();
+      expect(screen.getByText(portfolio.worth.toString())).toBeInTheDocument();
+    });
+  });
+
+  it('filters portfolios based on search input', () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter>
+          <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Type in the search input and check if filtering works
+    const searchInput = screen.getByPlaceholderText('Search by name');
+    fireEvent.change(searchInput, { target: { value: 'Portfolio 1' } });
+
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.queryByText('Portfolio 2')).not.toBeInTheDocument();
+  });
+
+  it('renders authentication error when not authenticated', () => {
+    const notAuthenticatedStore = {
+      getState: () => ({
+        auth: {
+          isAuthenticated: false,
+          user: null
+        }
+      }),
+      subscribe: () => {},
+      dispatch: () => {}
+    };
+
+    render(
+      <Provider store={notAuthenticatedStore}>
+        <MemoryRouter>
+          <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Check if authentication error component is rendered
+    expect(screen.getByText('Authentication Error')).toBeInTheDocument();
+  });
+
+  // Add more tests as needed for interactions, navigation, etc.
+});
