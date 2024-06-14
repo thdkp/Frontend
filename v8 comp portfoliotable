@@ -5,6 +5,25 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PortfolioTable from './PortfolioTable'; // Adjust the import path as needed
 import { vi } from 'vitest';
 
+// Mock the react-redux useSelector and useDispatch hooks
+vi.mock('react-redux', () => {
+  const actualReactRedux = vi.importActual('react-redux');
+  return {
+    ...actualReactRedux,
+    useSelector: (selector) => selector(mockStore.getState()),
+    useDispatch: () => mockStore.dispatch,
+  };
+});
+
+// Mock the react-router-dom components and hooks
+vi.mock('react-router-dom', () => {
+  const actualReactRouterDom = vi.importActual('react-router-dom');
+  return {
+    ...actualReactRouterDom,
+    useNavigate: () => vi.fn(),
+  };
+});
+
 describe('PortfolioTable component', () => {
   const mockPortfolios = [
     { portfolioid: 1, name: 'Portfolio 1', profitLoss: 100, capital: 1000, worth: 1100 },
@@ -38,19 +57,6 @@ describe('PortfolioTable component', () => {
     subscribe: () => {},
     dispatch: () => {}
   };
-
-  vi.mock('react-redux', () => ({
-    Provider: ({ children }) => <>{children}</>,
-    useSelector: (selector) => selector(mockStore.getState()),
-    useDispatch: () => mockStore.dispatch,
-  }));
-
-  vi.mock('react-router-dom', () => ({
-    MemoryRouter: ({ children }) => <>{children}</>,
-    Routes: ({ children }) => <>{children}</>,
-    Route: ({ element }) => element,
-    useNavigate: () => vi.fn(),
-  }));
 
   it('renders portfolio table correctly when authenticated', () => {
     render(
@@ -111,6 +117,4 @@ describe('PortfolioTable component', () => {
     // Check if authentication error component is rendered
     expect(screen.getByText('Authentication Error')).toBeInTheDocument();
   });
-
-  // Add more tests as needed for interactions, navigation, etc.
 });
