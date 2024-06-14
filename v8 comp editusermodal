@@ -1,0 +1,86 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import EditUserModal from './EditUserModal'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('EditUserModal component', () => {
+  const mockOnSave = vi.fn();
+
+  const user = {
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    dob: '1980-01-01',
+    password: 'password'
+  };
+
+  it('renders modal correctly', () => {
+    render(
+      <EditUserModal
+        isOpen={true}
+        onClose={() => {}}
+        onSave={mockOnSave}
+        user={user}
+      />
+    );
+
+    // Check if modal content is rendered correctly
+    expect(screen.getByText('Edit User')).toBeDefined();
+    expect(screen.getByLabelText('Name')).toBeDefined();
+    expect(screen.getByLabelText('Email')).toBeDefined();
+    expect(screen.getByLabelText('Date of Birth')).toBeDefined();
+    expect(screen.getByLabelText('Password')).toBeDefined();
+
+    // Check if input fields are pre-filled with user data
+    expect(screen.getByLabelText('Name')).toHaveValue('John Doe');
+    expect(screen.getByLabelText('Email')).toHaveValue('john.doe@example.com');
+    expect(screen.getByLabelText('Date of Birth')).toHaveValue('1980-01-01');
+    expect(screen.getByLabelText('Password')).toHaveValue('password');
+
+    // Check if cancel and save buttons are rendered
+    expect(screen.getByText('Cancel')).toBeDefined();
+    expect(screen.getByText('Save')).toBeDefined();
+  });
+
+  it('calls onSave with updated form data on form submission', () => {
+    render(
+      <EditUserModal
+        isOpen={true}
+        onClose={() => {}}
+        onSave={mockOnSave}
+        user={user}
+      />
+    );
+
+    // Simulate changes in form fields
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Jane Doe' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jane.doe@example.com' } });
+    fireEvent.change(screen.getByLabelText('Date of Birth'), { target: { value: '1990-01-01' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'newpassword' } });
+
+    // Simulate form submission
+    fireEvent.submit(screen.getByRole('form'));
+
+    // Check if onSave is called with updated form data
+    expect(mockOnSave).toHaveBeenCalledWith({
+      name: 'Jane Doe',
+      email: 'jane.doe@example.com',
+      dob: '1990-01-01',
+      password: 'newpassword'
+    });
+  });
+
+  it('does not render when isOpen is false', () => {
+    const { container } = render(
+      <EditUserModal
+        isOpen={false}
+        onClose={() => {}}
+        onSave={() => {}}
+        user={user}
+      />
+    );
+
+    // Check if the modal content is not in the document
+    const modal = container.querySelector('.fixed.inset-0');
+    expect(modal).toBeNull();
+  });
+});
