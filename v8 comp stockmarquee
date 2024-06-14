@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import StockMarquee from './StockMarquee'; // Adjust the import path as needed
 import { vi } from 'vitest';
 
@@ -10,17 +10,17 @@ describe('StockMarquee component', () => {
     { stocksymbol: 'INDIGO', price: 4189.05, change: 0.65 }
   ];
 
-  beforeEach(() => {
-    vi.mock({
-      fetch: () => Promise.resolve({ json: () => Promise.resolve(mockStockData) })
-    });
-  });
+  vi.mock('fetch', vi.fn((url, options) => {
+    return Promise.resolve({ json: () => Promise.resolve(mockStockData) });
+  }));
 
   it('renders stock marquee correctly', async () => {
-    render(<StockMarquee />);
+    await vi.act(async () => {
+      render(<StockMarquee />);
+    });
 
     // Wait for the component to fetch and render stock data
-    const stockElements = await screen.findAllByRole('listitem');
+    const stockElements = screen.getAllByRole('listitem');
 
     expect(stockElements).toHaveLength(mockStockData.length);
 
