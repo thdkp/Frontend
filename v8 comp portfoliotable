@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PortfolioTable from './PortfolioTable'; // Adjust the import path as needed
 import { vi } from 'vitest';
 
@@ -11,34 +11,54 @@ describe('PortfolioTable component', () => {
     { portfolioid: 2, name: 'Portfolio 2', profitLoss: -50, capital: 500, worth: 450 }
   ];
 
+  const mockUser = {
+    id: 1,
+    name: 'John Doe',
+    email: 'john.doe@example.com'
+  };
+
   const mockStore = {
     getState: () => ({
       auth: {
         isAuthenticated: true,
-        user: { /* Mock user data as needed */ }
+        user: mockUser
       }
     }),
     subscribe: () => {},
     dispatch: () => {}
   };
 
-  vi.mock({
-    'react-redux': () => ({
-      Provider: ({ children }) => <>{children}</>,
-      useSelector: () => mockStore.getState(),
-      useDispatch: () => mockStore.dispatch,
+  const notAuthenticatedStore = {
+    getState: () => ({
+      auth: {
+        isAuthenticated: false,
+        user: null
+      }
     }),
-    'react-router-dom': () => ({
-      MemoryRouter: ({ children }) => <>{children}</>,
-      // You may mock other components or hooks from react-router-dom as needed
-    }),
-  });
+    subscribe: () => {},
+    dispatch: () => {}
+  };
+
+  vi.mock('react-redux', () => ({
+    Provider: ({ children }) => <>{children}</>,
+    useSelector: (selector) => selector(mockStore.getState()),
+    useDispatch: () => mockStore.dispatch,
+  }));
+
+  vi.mock('react-router-dom', () => ({
+    MemoryRouter: ({ children }) => <>{children}</>,
+    Routes: ({ children }) => <>{children}</>,
+    Route: ({ element }) => element,
+    useNavigate: () => vi.fn(),
+  }));
 
   it('renders portfolio table correctly when authenticated', () => {
     render(
       <Provider store={mockStore}>
         <MemoryRouter>
-          <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+          <Routes>
+            <Route path="/" element={<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />} />
+          </Routes>
         </MemoryRouter>
       </Provider>
     );
@@ -62,7 +82,9 @@ describe('PortfolioTable component', () => {
     render(
       <Provider store={mockStore}>
         <MemoryRouter>
-          <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+          <Routes>
+            <Route path="/" element={<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />} />
+          </Routes>
         </MemoryRouter>
       </Provider>
     );
@@ -76,21 +98,12 @@ describe('PortfolioTable component', () => {
   });
 
   it('renders authentication error when not authenticated', () => {
-    const notAuthenticatedStore = {
-      getState: () => ({
-        auth: {
-          isAuthenticated: false,
-          user: null
-        }
-      }),
-      subscribe: () => {},
-      dispatch: () => {}
-    };
-
     render(
       <Provider store={notAuthenticatedStore}>
         <MemoryRouter>
-          <PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />
+          <Routes>
+            <Route path="/" element={<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={() => {}} />} />
+          </Routes>
         </MemoryRouter>
       </Provider>
     );
