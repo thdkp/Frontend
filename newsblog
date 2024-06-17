@@ -1,0 +1,70 @@
+import React, { useState, useEffect } from 'react';
+import './App.css';
+
+const posts = [
+  {
+    id: 1,
+    title: "First Blog Post",
+    content: "This is the content of the first blog post."
+  },
+  {
+    id: 2,
+    title: "Second Blog Post",
+    content: "This is the content of the second blog post."
+  },
+  // Add more posts as needed
+];
+
+function App() {
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <header className="p-4 bg-white dark:bg-gray-800 shadow-md flex justify-between items-center">
+        <h1 className="text-2xl font-bold">My Blog</h1>
+        <button 
+          onClick={() => setDarkMode(!darkMode)} 
+          className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
+        >
+          Toggle Dark Mode
+        </button>
+      </header>
+      <main className="p-4">
+        {posts.map(post => (
+          <article key={post.id} className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md">
+            <h2 className="text-xl font-semibold">{post.title}</h2>
+            <p>{post.content}</p>
+          </article>
+        ))}
+      </main>
+    </div>
+  );
+}
+
+export default App;
+,...............
+
+
+body {
+  @apply bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+}
+
+header {
+  @apply bg-white dark:bg-gray-800;
+}
+
+button {
+  @apply p-2 rounded-md bg-gray-200 dark:bg-gray-700;
+}
+
+article {
+  @apply mb-4 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md;
+}
