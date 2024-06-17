@@ -94,6 +94,8 @@ describe('PortfolioDiversity', () => {
 });
 ........
 
+ ,,,,,,,
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
@@ -123,33 +125,37 @@ describe('PortfolioDiversity component', () => {
     email: 'john.doe@example.com'
   };
 
-  const mockStore = {
-    getState: () => ({
-      auth: {
-        isAuthenticated: true,
-        user: mockUser
-      }
-    }),
-    subscribe: () => {},
-    dispatch: () => {}
-  };
+  let mockStore, notAuthenticatedStore;
 
-  const notAuthenticatedStore = {
-    getState: () => ({
-      auth: {
-        isAuthenticated: false,
-        user: null
-      }
-    }),
-    subscribe: () => {},
-    dispatch: () => {}
-  };
+  beforeEach(() => {
+    mockStore = {
+      getState: () => ({
+        auth: {
+          isAuthenticated: true,
+          user: mockUser
+        }
+      }),
+      subscribe: () => {},
+      dispatch: () => {}
+    };
 
-  vi.mock('react-redux', () => ({
-    Provider: ({ children }) => <>{children}</>,
-    useSelector: (selector) => selector(mockStore.getState()),
-    useDispatch: () => mockStore.dispatch,
-  }));
+    notAuthenticatedStore = {
+      getState: () => ({
+        auth: {
+          isAuthenticated: false,
+          user: null
+        }
+      }),
+      subscribe: () => {},
+      dispatch: () => {}
+    };
+
+    vi.mock('react-redux', () => ({
+      Provider: ({ children }) => <>{children}</>,
+      useSelector: (selector) => selector(mockStore.getState()),
+      useDispatch: () => mockStore.dispatch,
+    }));
+  });
 
   it('renders AllocationView by default when authenticated', () => {
     render(
@@ -194,4 +200,4 @@ describe('PortfolioDiversity component', () => {
   });
 
   // Add more tests as needed for interactions, navigation, etc.
-});
+}); 
