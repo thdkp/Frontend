@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { SunIcon, MoonIcon } from '@heroicons/react/solid';
 import './App.css';
 
 const posts = [
   {
     id: 1,
     title: "First Blog Post",
-    content: "This is the content of the first blog post."
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    image: "https://via.placeholder.com/600x400"
   },
   {
     id: 2,
     title: "Second Blog Post",
-    content: "This is the content of the second blog post."
+    content: "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
+    image: "https://via.placeholder.com/600x400"
   },
   // Add more posts as needed
 ];
@@ -27,31 +30,48 @@ function App() {
   }, [darkMode]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <header className="p-4 bg-white dark:bg-gray-800 shadow-md flex justify-between items-center">
-        <h1 className="text-2xl font-bold">My Blog</h1>
-        <button 
-          onClick={() => setDarkMode(!darkMode)} 
-          className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
-        >
-          Toggle Dark Mode
-        </button>
-      </header>
-      <main className="p-4">
-        {posts.map(post => (
-          <article key={post.id} className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md">
-            <h2 className="text-xl font-semibold">{post.title}</h2>
-            <p>{post.content}</p>
-          </article>
-        ))}
-      </main>
+    <div className="min-h-screen flex">
+      <aside className="w-64 bg-gray-100 dark:bg-gray-800 p-4">
+        <nav>
+          <h2 className="text-lg font-bold mb-4">Contents</h2>
+          <ul>
+            {posts.map(post => (
+              <li key={post.id}>
+                <a href={`#post-${post.id}`} className="block py-2 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
+                  {post.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+      <div className="flex-1 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        <header className="p-4 bg-white dark:bg-gray-800 shadow-md flex justify-between items-center">
+          <h1 className="text-2xl font-bold">My Blog</h1>
+          <button 
+            onClick={() => setDarkMode(!darkMode)} 
+            className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
+          >
+            {darkMode ? <SunIcon className="h-6 w-6 text-yellow-500" /> : <MoonIcon className="h-6 w-6 text-gray-900" />}
+          </button>
+        </header>
+        <main className="p-4">
+          {posts.map(post => (
+            <article key={post.id} id={`post-${post.id}`} className="mb-8 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md">
+              <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
+              <img src={post.image} alt={post.title} className="mb-4 w-full h-auto rounded" />
+              <p>{post.content}</p>
+            </article>
+          ))}
+        </main>
+      </div>
     </div>
   );
 }
 
 export default App;
-,...............
 
+..........
 
 body {
   @apply bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
@@ -66,5 +86,13 @@ button {
 }
 
 article {
-  @apply mb-4 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md;
+  @apply mb-8 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md;
+}
+
+aside {
+  @apply w-64 bg-gray-100 dark:bg-gray-800 p-4;
+}
+
+nav ul li a {
+  @apply block py-2 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700;
 }
