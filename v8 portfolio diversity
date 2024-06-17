@@ -92,3 +92,106 @@ describe('PortfolioDiversity', () => {
     // Add more assertions based on your component's behavior
   });
 });
+........
+
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import PortfolioDiversity from './PortfolioDiversity'; // Adjust the import path as needed
+import { vi } from 'vitest';
+
+describe('PortfolioDiversity component', () => {
+  const mockPortfolio = {
+    allocation: [
+      { category: 'Stocks', percentage: 60 },
+      { category: 'Bonds', percentage: 40 }
+    ],
+    bondEquity: [
+      { category: 'Government Bonds', percentage: 30 },
+      { category: 'Corporate Bonds', percentage: 10 }
+    ],
+    assetClass: [
+      { category: 'Equities', percentage: 50 },
+      { category: 'Fixed Income', percentage: 30 },
+      { category: 'Cash', percentage: 20 }
+    ]
+  };
+
+  const mockUser = {
+    id: 1,
+    name: 'John Doe',
+    email: 'john.doe@example.com'
+  };
+
+  const mockStore = {
+    getState: () => ({
+      auth: {
+        isAuthenticated: true,
+        user: mockUser
+      }
+    }),
+    subscribe: () => {},
+    dispatch: () => {}
+  };
+
+  const notAuthenticatedStore = {
+    getState: () => ({
+      auth: {
+        isAuthenticated: false,
+        user: null
+      }
+    }),
+    subscribe: () => {},
+    dispatch: () => {}
+  };
+
+  vi.mock('react-redux', () => ({
+    Provider: ({ children }) => <>{children}</>,
+    useSelector: (selector) => selector(mockStore.getState()),
+    useDispatch: () => mockStore.dispatch,
+  }));
+
+  it('renders AllocationView by default when authenticated', () => {
+    render(
+      <Provider store={mockStore}>
+        <PortfolioDiversity portfolio={mockPortfolio} />
+      </Provider>
+    );
+
+    // Check if AllocationView is rendered by default
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+    expect(screen.getByText('Stocks')).toBeInTheDocument();
+    expect(screen.getByText('Bonds')).toBeInTheDocument();
+    expect(screen.queryByText('Government Bonds')).not.toBeInTheDocument(); // BondEquity and AssetClass views are not shown
+  });
+
+  it('switches views correctly on button click', () => {
+    render(
+      <Provider store={mockStore}>
+        <PortfolioDiversity portfolio={mockPortfolio} />
+      </Provider>
+    );
+
+    // Click on Bond Equity view button and check if BondEquity view is rendered
+    const bondEquityButton = screen.getByText('Bond Equity');
+    fireEvent.click(bondEquityButton);
+
+    expect(screen.getByText('Bond Equity')).toBeInTheDocument();
+    expect(screen.getByText('Government Bonds')).toBeInTheDocument();
+    expect(screen.getByText('Corporate Bonds')).toBeInTheDocument();
+    expect(screen.queryByText('Stocks')).not.toBeInTheDocument(); // AllocationView and AssetClass views are not shown
+  });
+
+  it('renders authentication error when not authenticated', () => {
+    render(
+      <Provider store={notAuthenticatedStore}>
+        <PortfolioDiversity portfolio={mockPortfolio} />
+      </Provider>
+    );
+
+    // Check if authentication error component is rendered
+    expect(screen.getByText('Authentication Error')).toBeInTheDocument();
+  });
+
+  // Add more tests as needed for interactions, navigation, etc.
+});
