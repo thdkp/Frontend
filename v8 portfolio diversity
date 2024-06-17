@@ -125,43 +125,22 @@ describe('PortfolioDiversity component', () => {
     email: 'john.doe@example.com'
   };
 
-  let mockStore, notAuthenticatedStore;
+  // Mock useSelector hook
+  vi.mock('react-redux', () => ({
+    Provider: ({ children }) => <>{children}</>,
+    useSelector: (selector) => selector({ auth: { isAuthenticated: true, user: mockUser } }),
+    useDispatch: () => jest.fn(),
+  }));
 
-  beforeEach(() => {
-    mockStore = {
-      getState: () => ({
-        auth: {
-          isAuthenticated: true,
-          user: mockUser
-        }
-      }),
-      subscribe: () => {},
-      dispatch: () => {}
-    };
-
-    notAuthenticatedStore = {
-      getState: () => ({
-        auth: {
-          isAuthenticated: false,
-          user: null
-        }
-      }),
-      subscribe: () => {},
-      dispatch: () => {}
-    };
-
-    vi.mock('react-redux', () => ({
-      Provider: ({ children }) => <>{children}</>,
-      useSelector: (selector) => selector(mockStore.getState()),
-      useDispatch: () => mockStore.dispatch,
-    }));
-  });
+  // Mock useNavigate hook
+  vi.mock('react-router-dom', () => ({
+    ...vi.importActual('react-router-dom'),
+    useNavigate: () => jest.fn(),
+  }));
 
   it('renders AllocationView by default when authenticated', () => {
     render(
-      <Provider store={mockStore}>
-        <PortfolioDiversity portfolio={mockPortfolio} />
-      </Provider>
+      <PortfolioDiversity portfolio={mockPortfolio} />
     );
 
     // Check if AllocationView is rendered by default
@@ -173,9 +152,7 @@ describe('PortfolioDiversity component', () => {
 
   it('switches views correctly on button click', () => {
     render(
-      <Provider store={mockStore}>
-        <PortfolioDiversity portfolio={mockPortfolio} />
-      </Provider>
+      <PortfolioDiversity portfolio={mockPortfolio} />
     );
 
     // Click on Bond Equity view button and check if BondEquity view is rendered
@@ -189,10 +166,15 @@ describe('PortfolioDiversity component', () => {
   });
 
   it('renders authentication error when not authenticated', () => {
+    // Mock useSelector hook to simulate not authenticated state
+    vi.mock('react-redux', () => ({
+      Provider: ({ children }) => <>{children}</>,
+      useSelector: (selector) => selector({ auth: { isAuthenticated: false, user: null } }),
+      useDispatch: () => jest.fn(),
+    }));
+
     render(
-      <Provider store={notAuthenticatedStore}>
-        <PortfolioDiversity portfolio={mockPortfolio} />
-      </Provider>
+      <PortfolioDiversity portfolio={mockPortfolio} />
     );
 
     // Check if authentication error component is rendered
@@ -200,4 +182,4 @@ describe('PortfolioDiversity component', () => {
   });
 
   // Add more tests as needed for interactions, navigation, etc.
-}); 
+});
