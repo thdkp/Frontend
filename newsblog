@@ -78,3 +78,29 @@ function App() {
 }
 
 export default App;
+.........
+
+
+body {
+  @apply bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+}
+
+header {
+  @apply bg-white dark:bg-gray-800;
+}
+
+button {
+  @apply p-2 rounded-md bg-gray-200 dark:bg-gray-700;
+}
+
+article {
+  @apply mb-8 p-4 bg-white dark:bg-gray-800 rounded-md shadow-md;
+}
+
+aside {
+  @apply fixed inset-y-0 left-0 w-64 bg-gray-100 dark:bg-gray-800 p-4 transform transition-transform;
+}
+
+nav ul li a {
+  @apply block py-2 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700;
+}
