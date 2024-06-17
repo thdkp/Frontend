@@ -183,3 +183,4 @@ describe('PortfolioDiversity component', () => {
 
   // Add more tests as needed for interactions, navigation, etc.
 });
+  
