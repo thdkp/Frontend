@@ -1,16 +1,41 @@
 import React, { useState, useEffect } from 'react';
 
-const sections = [
-  { id: 'introduction', title: 'Introduction' },
-  { id: 'theory', title: 'Theory' },
-  { id: 'implementation', title: 'Implementation' },
-  { id: 'results', title: 'Results' },
-  { id: 'conclusion', title: 'Conclusion' },
-];
-
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const sections = [
+    { id: 'introduction', title: 'Introduction', 
+      content: [
+        "Welcome to the Portfolio Optimization page.",
+        "This section covers the introduction to portfolio optimization.",
+      ]
+    },
+    { id: 'theory', title: 'Theory', 
+      content: [
+        "Theory of portfolio optimization involves...",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      ]
+    },
+    { id: 'implementation', title: 'Implementation', 
+      content: [
+        "Implementation details.",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      ]
+    },
+    { id: 'results', title: 'Results', 
+      content: [
+        "Results of portfolio optimization.",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      ]
+    },
+    { id: 'conclusion', title: 'Conclusion', 
+      content: [
+        "Conclusion of portfolio optimization.",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      ]
+    },
+  ];
 
   useEffect(() => {
     if (darkMode) {
@@ -48,30 +73,27 @@ const App = () => {
       <div className="flex-1 overflow-y-auto p-4 md:p-8">
         <header className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Portfolio Optimization</h1>
-          <div className="flex items-center">
-            <button 
-              onClick={() => setDarkMode(!darkMode)} 
-              className="p-2 rounded-md bg-gray-300 dark:bg-gray-700 mr-4"
-            >
-              {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            </button>
-          </div>
         </header>
-
         <main>
           {sections.map(section => (
             <section key={section.id} id={section.id} className="mb-8">
               <h2 className="text-xl font-bold mb-4">{section.title}</h2>
-              {/* Replace with your content for each section */}
-              <p className="mb-4">
-                This is the content for {section.title}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              </p>
-              <p>
-                Duis aute irure dolor in <span className="italic">reprehenderit</span> in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia <span className="font-bold">deserunt</span> mollit anim id est laborum.
-              </p>
+              {section.content && section.content.map((paragraph, index) => (
+                <p key={index} className="mb-4">{paragraph}</p>
+              ))}
             </section>
           ))}
         </main>
+      </div>
+
+      {/* Dark mode toggle */}
+      <div className="fixed bottom-4 right-4">
+        <button 
+          onClick={() => setDarkMode(!darkMode)} 
+          className="p-2 rounded-md bg-gray-300 dark:bg-gray-700 mr-4"
+        >
+          {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        </button>
       </div>
     </div>
   );
