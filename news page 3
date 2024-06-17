@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { MenuIcon, XIcon } from '@heroicons/react/solid';
 
 const sections = [
   { id: 'introduction', title: 'Introduction' },
@@ -31,7 +30,7 @@ function PortfolioPage() {
             onClick={() => setSidebarOpen(!sidebarOpen)} 
             className="p-2 rounded-md bg-gray-300 dark:bg-gray-700"
           >
-            {sidebarOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+            {sidebarOpen ? 'Close Menu' : 'Open Menu'}
           </button>
         </div>
         <nav className="md:block md:pb-0 md:overflow-y-auto">
@@ -65,7 +64,7 @@ function PortfolioPage() {
               <h2 className="text-xl font-bold mb-4">{section.title}</h2>
               {/* Replace with your content for each section */}
               <p className="mb-4">
-                This is the content for {section.title}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                This is the content for {section.title}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
               </p>
               <p>
                 Duis aute irure dolor in <span className="italic">reprehenderit</span> in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia <span className="font-bold">deserunt</span> mollit anim id est laborum.
