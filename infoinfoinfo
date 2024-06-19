@@ -1,0 +1,228 @@
+import React from 'react';
+
+const Sidebar = ({ items, onItemClick, activeIndex }) => {
+  return (
+    <div className="w-1/4 bg-gray-800 h-screen p-4">
+      <ul>
+        {items.map((item, index) => (
+          <li key={index} className="mb-2">
+            <button
+              className={`text-left w-full p-4 rounded-lg transition duration-200 ${
+                activeIndex === index ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+              } hover:bg-blue-500 hover:text-white`}
+              onClick={() => onItemClick(index)}
+            >
+              {item}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default Sidebar;
+........................
+import React from 'react';
+
+const Content = ({ content }) => {
+  return (
+    <div className="w-3/4 p-8">
+      <h2 className="text-4xl font-bold mb-6 text-gray-800">{content.title}</h2>
+      <p className="mb-6 text-gray-600 leading-relaxed">{content.description}</p>
+      {content.code && (
+        <div className="bg-gray-100 p-6 rounded-lg shadow-lg mb-6">
+          <code className="text-gray-800">{content.code}</code>
+        </div>
+      )}
+      {content.table && (
+        <table className="table-auto w-full mt-6 bg-white shadow-lg rounded-lg">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Type</th>
+              <th className="px-6 py-3 text-left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {content.table.map((row, index) => (
+              <tr key={index} className="border-t">
+                <td className="border px-6 py-3 text-gray-800">{row.name}</td>
+                <td className="border px-6 py-3 text-gray-600">{row.type}</td>
+                <td className="border px-6 py-3 text-gray-600">{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+export default Content;
+.........................
+import React, { useState } from 'react';
+import Sidebar from './Sidebar';
+import Content from './Content';
+
+const items = ['Item #1', 'Item #2', 'Item #3', 'Item #4', 'Item #5'];
+const contents = [
+  {
+    title: 'Item #1',
+    description: 'This is a section, add any HTML here. Below is an example of code block and table that can be used to describe components.',
+    code: `function foo() { return bar; }`,
+    table: [
+      { name: 'text', type: 'string', description: 'title to display' },
+      { name: 'padding', type: 'number', description: 'padding around text' }
+    ]
+  },
+  // Add more items here similar to the above object
+];
+
+const App = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar items={items} onItemClick={setActiveIndex} activeIndex={activeIndex} />
+      <Content content={contents[activeIndex]} />
+    </div>
+  );
+};
+
+export default App;
+.......................
+css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+........................
+// Adjusting Sidebar for responsiveness
+<div className="w-full md:w-1/4 bg-gray-800 h-screen p-4">
+
+// Adjusting Content for responsiveness
+<div className="w-full md:w-3/4 p-8">
+.....
+,,,,,
+.....
+,,,,,
+....
+,,,,,
+sidebar 
+import React from 'react';
+
+const Sidebar = ({ items, onItemClick }) => {
+  return (
+    <div className="w-1/4 bg-gray-100 h-screen p-4">
+      <ul>
+        {items.map((item, index) => (
+          <li key={index} className="mb-2">
+            <button
+              className="text-left w-full p-2 bg-blue-500 text-white rounded"
+              onClick={() => onItemClick(index)}
+            >
+              {item}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default Sidebar;
+,,,,,,
+content
+import React from 'react';
+
+const Content = ({ content }) => {
+  return (
+    <div className="w-3/4 p-4">
+      <h2 className="text-2xl font-bold mb-4">{content.title}</h2>
+      <p className="mb-4">{content.description}</p>
+      {content.code && (
+        <div className="bg-gray-200 p-4 rounded">
+          <code>{content.code}</code>
+        </div>
+      )}
+      {content.table && (
+        <table className="table-auto w-full mt-4">
+          <thead>
+            <tr>
+              <th className="px-4 py-2">Name</th>
+              <th className="px-4 py-2">Type</th>
+              <th className="px-4 py-2">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {content.table.map((row, index) => (
+              <tr key={index}>
+                <td className="border px-4 py-2">{row.name}</td>
+                <td className="border px-4 py-2">{row.type}</td>
+                <td className="border px-4 py-2">{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+export default Content;
+..........
+import React, { useState } from 'react';
+import Sidebar from './Sidebar';
+import Content from './Content';
+
+const items = ['Item #1', 'Item #2', 'Item #3', 'Item #4', 'Item #5'];
+const contents = [
+  {
+    title: 'Item #1',
+    description: 'This is a section, add any HTML here. Below is an example of code block and table that can be used to describe components.',
+    code: `function foo() { return bar; }`,
+    table: [
+      { name: 'text', type: 'string', description: 'title to display' },
+      { name: 'padding', type: 'number', description: 'padding around text' }
+    ]
+  },
+  // Add more items here similar to the above object
+];
+
+const App = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <div className="flex">
+      <Sidebar items={items} onItemClick={setActiveIndex} />
+      <Content content={contents[activeIndex]} />
+    </div>
+  );
+};
+
+export default App;
+......
+index.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
