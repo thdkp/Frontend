@@ -1,0 +1,73 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+// src/App.jsx
+import React from 'react';
+
+const App = () => {
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-purple-700 text-white p-4 flex justify-between items-center">
+        <h1 className="text-3xl font-bold">BING'S BEST THINGS</h1>
+        <nav>
+          <ul className="flex space-x-4">
+            <li><a href="#" className="hover:underline">HOME</a></li>
+            <li><a href="#" className="hover:underline">ENRICHMENT</a></li>
+            <li><a href="#" className="hover:underline">ABOUT THE TEAM</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      {/* Main Content */}
+      <main className="p-4">
+        <section className="max-w-4xl mx-auto">
+          <img 
+            src="path_to_your_image.jpg" // Replace with your image link
+            alt="Dog refusing food" 
+            className="w-full"
+          />
+          <article className="mt-4">
+            <h2 className="text-2xl font-bold">WHY WON'T MY DOG EAT THEIR NEW FOOD?</h2>
+            <p className="mt-2">If you are struggling to get your dog to eat the new food you've bought them, you're not alone...</p>
+            {/* Add more content here */}
+          </article>
+        </section>
+
+        {/* Sidebar */}
+        <aside className="mt-4 max-w-xs mx-auto lg:mx-0 lg:ml-8 lg:max-w-sm lg:absolute lg:top-20 lg:right-20">
+          <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold">HELLO! I'M BING!</h2>
+            <img 
+              src="path_to_your_image.jpg" // Replace with your image link
+              alt="Bing's avatar" 
+              className="w-32 h-32 mx-auto rounded-full"
+            />
+            <p className="mt-2">Welcome to my site. You can sign up to my newsletter below to get all the latest posts as soon as they go live.</p>
+            <input 
+              type="email" 
+              placeholder="Your Email Address" 
+              className="mt-2 p-2 w-full border rounded"
+            />
+            <button className="mt-2 bg-purple-700 text-white p-2 w-full rounded">SUBSCRIBE</button>
+          </div>
+          <div className="bg-gray-100 p-4 mt-4 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold">ADVERTISE HERE</h2>
+            <p>If you have a pet product you want to advertise, contact us for rates.</p>
+          </div>
+        </aside>
+      </main>
+    </div>
+  );
+}
+
+export default App;
