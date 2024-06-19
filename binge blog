@@ -1,0 +1,90 @@
+// src/App.jsx
+import React from 'react';
+import './App.css';
+
+const App = () => {
+  const handleButtonClick = () => {
+    window.location.href = 'your_target_url'; // Replace with the URL of the above page
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <h1 className="text-3xl font-bold">WEN TRAVEL MODERN</h1>
+        </div>
+        <nav>
+          <ul className="flex space-x-4">
+            <li><a href="#" className="hover:underline">HOME</a></li>
+            <li><a href="#" className="hover:underline">STYLE GUIDE</a></li>
+            <li><a href="#" className="hover:underline">TEMPLATES</a></li>
+            <li><a href="#" className="hover:underline">CONTACT US</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      {/* Main Content */}
+      <main>
+        <section className="relative h-screen bg-cover bg-center" style={{ backgroundImage: 'url(path_to_your_image.jpg)' }}> {/* Replace with your image link */}
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center text-center text-white p-4">
+            <h2 className="text-4xl font-bold">The Great Outdoors</h2>
+            <p className="mt-4">Adventure begins now!</p>
+            <button 
+              onClick={handleButtonClick} 
+              className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600">
+              VIEW DETAILS
+            </button>
+          </div>
+        </section>
+
+        {/* Search Section */}
+        <section className="bg-white p-4 shadow-md">
+          <div className="max-w-4xl mx-auto flex space-x-4">
+            <select className="p-2 border rounded">
+              <option>All Locations</option>
+            </select>
+            <select className="p-2 border rounded">
+              <option>Trip Types</option>
+            </select>
+            <input type="text" placeholder="Keyword" className="p-2 border rounded flex-grow" />
+            <button className="p-2 bg-orange-500 text-white rounded hover:bg-orange-600">SEARCH</button>
+          </div>
+        </section>
+
+        {/* Featured Trips */}
+        <section className="p-4">
+          <h2 className="text-2xl font-bold text-center">Featured Trips</h2>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Trip Card 1 */}
+            <div className="border rounded-lg overflow-hidden shadow-lg">
+              <img src="path_to_your_image.jpg" alt="Trip to Santorini" className="w-full h-48 object-cover" /> {/* Replace with your image link */}
+              <div className="p-4">
+                <h3 className="text-xl font-bold">Trip to Santorini</h3>
+                <p>Flying | 3 Days | 03/20/2023</p>
+              </div>
+            </div>
+            {/* Trip Card 2 */}
+            <div className="border rounded-lg overflow-hidden shadow-lg">
+              <img src="path_to_your_image.jpg" alt="Trip to Bali" className="w-full h-48 object-cover" /> {/* Replace with your image link */}
+              <div className="p-4">
+                <h3 className="text-xl font-bold">Trip to Bali</h3>
+                <p>Hiking | 5 Days | 04/15/2023</p>
+              </div>
+            </div>
+            {/* Trip Card 3 */}
+            <div className="border rounded-lg overflow-hidden shadow-lg">
+              <img src="path_to_your_image.jpg" alt="Trip to Maldives" className="w-full h-48 object-cover" /> {/* Replace with your image link */}
+              <div className="p-4">
+                <h3 className="text-xl font-bold">Trip to Maldives</h3>
+                <p>Relaxing | 7 Days | 05/10/2023</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+export default App;
