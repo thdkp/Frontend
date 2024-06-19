@@ -1,0 +1,106 @@
+import React from 'react';
+
+const Content = ({ content }) => {
+  return (
+    <div className="w-full md:w-3/4 p-8">
+      <h2 className="text-4xl font-bold mb-6 text-gray-800">{content.title}</h2>
+      {content.description.map((paragraph, index) => (
+        <p key={index} className="mb-6 text-gray-600 leading-relaxed">
+          {paragraph}
+        </p>
+      ))}
+      {content.images && content.images.map((image, index) => (
+        <img key={index} src={image.src} alt={image.alt} className="mb-6 max-w-full h-auto rounded shadow-lg" />
+      ))}
+      {content.code && (
+        <div className="bg-gray-100 p-6 rounded-lg shadow-lg mb-6">
+          <code className="text-gray-800">{content.code}</code>
+        </div>
+      )}
+      {content.table && (
+        <table className="table-auto w-full mt-6 bg-white shadow-lg rounded-lg">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Type</th>
+              <th className="px-6 py-3 text-left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {content.table.map((row, index) => (
+              <tr key={index} className="border-t">
+                <td className="border px-6 py-3 text-gray-800">{row.name}</td>
+                <td className="border px-6 py-3 text-gray-600">{row.type}</td>
+                <td className="border px-6 py-3 text-gray-600">{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+export default Content;
+
+......
+......
+
+import React, { useState } from 'react';
+import Sidebar from './Sidebar';
+import Content from './Content';
+import Header from './Header';
+
+const items = ['Item #1', 'Item #2', 'Item #3', 'Item #4', 'Item #5'];
+const contents = [
+  {
+    title: 'Item #1',
+    description: [
+      'This is the first paragraph for Item #1.',
+      'This is the second paragraph for Item #1. You can add as many paragraphs as needed.',
+      'Another paragraph with more details about Item #1.'
+    ],
+    images: [
+      { src: 'https://via.placeholder.com/600x400', alt: 'Placeholder Image 1' },
+      { src: 'https://via.placeholder.com/600x400', alt: 'Placeholder Image 2' }
+    ],
+    code: `function foo() { return bar; }`,
+    table: [
+      { name: 'text', type: 'string', description: 'title to display' },
+      { name: 'padding', type: 'number', description: 'padding around text' }
+    ]
+  },
+  // Add more items here similar to the above object
+];
+
+const App = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header />
+      <div className="flex flex-1">
+        <Sidebar items={items} onItemClick={setActiveIndex} activeIndex={activeIndex} />
+        <Content content={contents[activeIndex]} />
+      </div>
+    </div>
+  );
+};
+
+export default App;
+
+....
+....
+
+import React from 'react';
+
+const Header = () => {
+  return (
+    <header className="bg-gray-800 text-white p-4 shadow-lg">
+      <h1 className="text-3xl font-bold">Portfolio Learn Page</h1>
+    </header>
+  );
+};
+
+export default Header
+....
