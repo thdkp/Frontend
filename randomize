@@ -1,0 +1,127 @@
+const contents = [
+  {
+    title: 'Item #1',
+    subheading: 'Subheading for Item #1',
+    sections: [
+      {
+        content: [
+          { type: 'paragraph', text: 'This is the first paragraph for Section 1.' },
+          { type: 'image', src: 'https://via.placeholder.com/600x400', alt: 'Image 1' },
+          { type: 'table', data: [
+            { name: 'Name 1', type: 'Type A', description: 'Description for Name 1' },
+            { name: 'Name 2', type: 'Type B', description: 'Description for Name 2' }
+          ]},
+          { type: 'paragraph', text: 'This is the second paragraph for Section 1.' }
+        ]
+      },
+      {
+        content: [
+          { type: 'paragraph', text: 'This is the first paragraph for Section 2.' },
+          { type: 'image', src: 'https://via.placeholder.com/600x400', alt: 'Image 2' },
+          { type: 'image', src: 'https://via.placeholder.com/600x400', alt: 'Image 3' }
+        ]
+      }
+    ]
+  },
+  {
+    title: 'Item #2',
+    subheading: 'Subheading for Item #2',
+    sections: [
+      {
+        content: [
+          { type: 'paragraph', text: 'This is the first paragraph for Section 1 of Item #2.' },
+          { type: 'code', code: `const greeting = "Hello, world!";` },
+          { type: 'paragraph', text: 'This is the second paragraph for Section 1 of Item #2.' }
+        ]
+      },
+      {
+        content: [
+          { type: 'image', src: 'https://via.placeholder.com/600x400', alt: 'Image 4' },
+          { type: 'image', src: 'https://via.placeholder.com/600x400', alt: 'Image 5' }
+        ]
+      }
+    ]
+  }
+  // Add more items as needed
+];
+
+.......
+
+import React from 'react';
+
+const Content = ({ content }) => {
+  return (
+    <div className="w-full md:w-3/4 p-8">
+      {content.title && <h2 className="text-4xl font-bold mb-6 text-gray-800">{content.title}</h2>}
+      {content.subheading && <h3 className="text-2xl font-bold mb-4 text-gray-700">{content.subheading}</h3>}
+
+      {content.sections.map((section, sectionIndex) => (
+        <div key={sectionIndex} className="mb-8">
+          {section.content.map((element, index) => (
+            <React.Fragment key={index}>
+              {renderContentElement(element)}
+            </React.Fragment>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const renderContentElement = (element) => {
+  switch (element.type) {
+    case 'paragraph':
+      return <p className="mb-6 text-gray-600 leading-relaxed">{element.text}</p>;
+    case 'image':
+      return <img src={element.src} alt={element.alt} className="mb-6 max-w-full h-auto rounded shadow-lg" />;
+    case 'code':
+      return (
+        <div className="bg-gray-100 p-6 rounded-lg shadow-lg mb-6">
+          <code className="text-gray-800">{element.code}</code>
+        </div>
+      );
+    case 'table':
+      return (
+        <table className="table-auto w-full mt-6 bg-white shadow-lg rounded-lg">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Type</th>
+              <th className="px-6 py-3 text-left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {element.data.map((row, index) => (
+              <tr key={index} className="border-t">
+                <td className="border px-6 py-3 text-gray-800">{row.name}</td>
+                <td className="border px-6 py-3 text-gray-600">{row.type}</td>
+                <td className="border px-6 py-3 text-gray-600">{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    default:
+      return null;
+  }
+};
+
+export default Content;
+....
+app
+import React, { useState } from 'react';
+import Content from './Content';
+
+const App = () => {
+  const [activeIndex, setActiveIndex] = useState(0); // Manage active item index
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Optionally, include a Header component here */}
+      <Content content={contents[activeIndex]} />
+      {/* Implement navigation or selection mechanism to change activeIndex */}
+    </div>
+  );
+};
+
+export default App;
