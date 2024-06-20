@@ -1,0 +1,71 @@
+// __tests__/MarketStatus.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import MarketStatus from '../MarketStatus';
+import { selectIsDarkMode } from '../redux/slices/themeSlice';
+
+vi.mock('../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+}));
+
+describe('MarketStatus Component', () => {
+  const mockStore = configureStore();
+  
+  const renderComponent = (isDarkMode) => {
+    const initialState = { theme: { isDarkMode } };
+    const store = mockStore(initialState);
+
+    render(
+      <Provider store={store}>
+        <MarketStatus />
+      </Provider>
+    );
+  };
+
+  it('renders market data correctly in light mode', () => {
+    renderComponent(false);
+
+    expect(screen.getByText(/S&P 500 Index/i)).toBeInTheDocument();
+    expect(screen.getByText(/4158\.24/i)).toBeInTheDocument();
+    expect(screen.getByText(/SENSEX/i)).toBeInTheDocument();
+    expect(screen.getByText(/73961\.31/i)).toBeInTheDocument();
+    expect(screen.getByText(/The market is in/i)).toBeInTheDocument();
+    expect(screen.getByText(/Extreme Fear zone/i)).toBeInTheDocument();
+
+    const fearIndex = screen.getByText(/Extreme Fear zone/i);
+    expect(fearIndex).toHaveClass('text-red-400');
+  });
+
+  it('renders market data correctly in dark mode', () => {
+    renderComponent(true);
+
+    expect(screen.getByText(/S&P 500 Index/i)).toBeInTheDocument();
+    expect(screen.getByText(/4158\.24/i)).toBeInTheDocument();
+    expect(screen.getByText(/SENSEX/i)).toBeInTheDocument();
+    expect(screen.getByText(/73961\.31/i)).toBeInTheDocument();
+    expect(screen.getByText(/The market is in/i)).toBeInTheDocument();
+    expect(screen.getByText(/Extreme Fear zone/i)).toBeInTheDocument();
+
+    const fearIndex = screen.getByText(/Extreme Fear zone/i);
+    expect(fearIndex).toHaveClass('text-red-400');
+  });
+
+  it('applies correct color classes based on fear status', () => {
+    renderComponent(false);
+
+    const monCircle = screen.getByText(/MON/i).previousSibling;
+    const tueCircle = screen.getByText(/TUE/i).previousSibling;
+    const wedCircle = screen.getByText(/WED/i).previousSibling;
+    const thuCircle = screen.getByText(/THU/i).previousSibling;
+    const friCircle = screen.getByText(/FRI/i).previousSibling;
+
+    expect(monCircle).toHaveClass('bg-yellow-400');
+    expect(tueCircle).toHaveClass('bg-green-400');
+    expect(wedCircle).toHaveClass('bg-red-400');
+    expect(thuCircle).toHaveClass('bg-yellow-400');
+    expect(friCircle).toHaveClass('bg-yellow-400');
+  });
+});
