@@ -1,0 +1,99 @@
+// __tests__/PortfolioTable.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import PortfolioTable from '../PortfolioTable';
+import { BrowserRouter as Router } from 'react-router-dom';
+
+// Mock data
+const portfolios = [
+  {
+    portfolioid: 1,
+    name: 'Tech Stocks',
+    profitLoss: 1500,
+    capital: 10000,
+    worth: 11500,
+    allocation: { stocks: 70, bonds: 30 },
+  },
+  {
+    portfolioid: 2,
+    name: 'Real Estate',
+    profitLoss: -500,
+    capital: 8000,
+    worth: 7500,
+    allocation: { realEstate: 100 },
+  },
+];
+
+// Mock function for onSelectPortfolio
+const mockOnSelectPortfolio = vi.fn();
+
+describe('PortfolioTable', () => {
+  const mockStore = configureStore();
+  const initialState = { auth: { isAuthenticated: true, user: { name: 'John Doe' } } };
+  const store = mockStore(initialState);
+
+  it('renders PortfolioTable with portfolios', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioTable portfolios={portfolios} onSelectPortfolio={mockOnSelectPortfolio} />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/Portfolio Table/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tech Stocks/i)).toBeInTheDocument();
+    expect(screen.getByText(/Real Estate/i)).toBeInTheDocument();
+  });
+
+  it('filters portfolios based on search query', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioTable portfolios={portfolios} onSelectPortfolio={mockOnSelectPortfolio} />
+        </Router>
+      </Provider>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(/Search by name/i), { target: { value: 'Tech' } });
+
+    expect(screen.queryByText(/Real Estate/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Tech Stocks/i)).toBeInTheDocument();
+  });
+
+  it('expands portfolio details on click', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioTable portfolios={portfolios} onSelectPortfolio={mockOnSelectPortfolio} />
+        </Router>
+      </Provider>
+    );
+
+    fireEvent.click(screen.getByText(/Tech Stocks/i));
+
+    expect(screen.getByText(/Summary for Tech Stocks/i)).toBeInTheDocument();
+    expect(screen.getByText(/Profit\/Loss: 1500/i)).toBeInTheDocument();
+    expect(screen.getByText(/Invested: 10000/i)).toBeInTheDocument();
+    expect(screen.getByText(/Portfolio Worth: 11500/i)).toBeInTheDocument();
+    expect(screen.getByText(/Allocation: {"stocks":70,"bonds":30}/i)).toBeInTheDocument();
+  });
+
+  it('renders AuthError if user is not authenticated', () => {
+    const unauthenticatedState = { auth: { isAuthenticated: false } };
+    const store = mockStore(unauthenticatedState);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioTable portfolios={portfolios} onSelectPortfolio={mockOnSelectPortfolio} />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/You are not authorized to view this page/i)).toBeInTheDocument();
+  });
+});
