@@ -1,0 +1,75 @@
+// Import necessary dependencies from vitest and react-testing-library
+import { render, screen, fireEvent, act } from 'vitest/react';
+import TodayStock from './TodayStock'; // Assuming the component is in the same directory
+
+// Mock useSelector from react-redux to simulate dark mode state
+jest.mock('react-redux', () => ({
+  useSelector: jest.fn(),
+}));
+
+describe('TodayStock Component', () => {
+  beforeEach(() => {
+    useSelector.mockReturnValue(false); // Mocking useSelector to return false (not in dark mode)
+  });
+
+  it('renders component with initial state and buttons', async () => {
+    render(<TodayStock />);
+
+    // Assert initial text in the component
+    expect(screen.getByText("Today's stocks")).toBeInTheDocument();
+
+    // Assert the presence of buttons
+    expect(screen.getByText('Gainers')).toBeInTheDocument();
+    expect(screen.getByText('Losers')).toBeInTheDocument();
+    expect(screen.getByText('Most Active')).toBeInTheDocument();
+
+    // Assert initial stock data display (assuming data loading completes)
+    await screen.findByText('Kotak S&P BSE Sensex ETF');
+    expect(screen.getByText('SENSEX1')).toBeInTheDocument();
+    expect(screen.getByText('$89.00')).toBeInTheDocument();
+  });
+
+  it('displays gainers when "Gainers" button is clicked', async () => {
+    render(<TodayStock />);
+
+    // Simulate clicking the Gainers button
+    await act(async () => {
+      fireEvent.click(screen.getByText('Gainers'));
+    });
+
+    // Assert that the gainers data is displayed
+    await screen.findByText('Adani Total Gas Ltd');
+    expect(screen.getByText('ATGL')).toBeInTheDocument();
+    expect(screen.getByText('$1039.30')).toBeInTheDocument();
+  });
+
+  it('displays losers when "Losers" button is clicked', async () => {
+    render(<TodayStock />);
+
+    // Simulate clicking the Losers button
+    await act(async () => {
+      fireEvent.click(screen.getByText('Losers'));
+    });
+
+    // Assert that the losers data is displayed
+    await screen.findByText('Adani Power Ltd');
+    expect(screen.getByText('ADANIPOWER')).toBeInTheDocument();
+    expect(screen.getByText('$755.80')).toBeInTheDocument();
+  });
+
+  it('displays most active stocks when "Most Active" button is clicked', async () => {
+    render(<TodayStock />);
+
+    // Simulate clicking the Most Active button
+    await act(async () => {
+      fireEvent.click(screen.getByText('Most Active'));
+    });
+
+    // Assert that the most active stocks data is displayed
+    await screen.findByText('Adani Enterprises Ltd');
+    expect(screen.getByText('ADANIENT')).toBeInTheDocument();
+    expect(screen.getByText('$3411.35')).toBeInTheDocument();
+  });
+
+  // Add more tests as needed to cover edge cases and additional functionality
+});
