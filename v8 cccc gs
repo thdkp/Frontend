@@ -5,12 +5,12 @@ import GetStarted from '../GetStarted';
 import { useSelector } from 'react-redux';
 
 // Mock useSelector from react-redux
-const useSelectorMock = jest.spyOn(require('react-redux'), 'useSelector');
+const mockUseSelector = (selectorFn) => selectorFn();
 
 vi('GetStarted', () => {
   it('renders correctly', async () => {
     // Mock useSelector to return false for isDarkMode
-    useSelectorMock.mockReturnValue(false);
+    useSelector.mockImplementation(mockUseSelector);
 
     render(<GetStarted />);
 
@@ -25,7 +25,7 @@ vi('GetStarted', () => {
 
   it('renders correctly in dark mode', () => {
     // Mock useSelector to return true for isDarkMode
-    useSelectorMock.mockReturnValue(true);
+    useSelector.mockImplementation(() => true);
 
     render(<GetStarted />);
 
@@ -36,7 +36,7 @@ vi('GetStarted', () => {
 
   it('renders correctly in light mode', () => {
     // Mock useSelector to return false for isDarkMode
-    useSelectorMock.mockReturnValue(false);
+    useSelector.mockImplementation(() => false);
 
     render(<GetStarted />);
 
@@ -47,7 +47,7 @@ vi('GetStarted', () => {
 
   it('redirects to signin page on button click', () => {
     // Mock useSelector to return false for isDarkMode
-    useSelectorMock.mockReturnValue(false);
+    useSelector.mockImplementation(mockUseSelector);
 
     render(<GetStarted />);
 
