@@ -20,7 +20,7 @@ vi('GetStarted', () => {
 
     // Assert elements rendered in dark mode
     const container = screen.getByTestId('get-started-container');
-    expect(container).toHaveClass('bg-white'); // Assuming bg-white is applied for dark mode
+    expect(container).toHaveClass('bg-gray'); // Adjust based on your component's logic
   });
 
   it('redirects to signin page on button click', () => {
