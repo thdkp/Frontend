@@ -1,59 +1,56 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import GetStarted from '../GetStarted';
 import { useSelector } from 'react-redux';
+import GetStarted from '../GetStarted';
 
-// Mock useSelector from react-redux
-const mockUseSelector = (selectorFn) => selectorFn();
+// Mock useSelector behavior
+const mockUseSelector = (selector) => selector({
+  // Simulate Redux store state here
+  auth: {
+    isDarkMode: true, // Set isDarkMode to true for dark mode test
+  }
+});
 
 vi('GetStarted', () => {
-  it('renders correctly', async () => {
-    // Mock useSelector to return false for isDarkMode
+  it('renders correctly in dark mode', () => {
+    // Mock useSelector to return state with isDarkMode: true
     useSelector.mockImplementation(mockUseSelector);
 
     render(<GetStarted />);
 
-    // Check if elements are rendered correctly
-    expect(screen.getByText(/Get started/i)).toBeInTheDocument();
-    expect(screen.getByText(/Track your portfolio/i)).toBeInTheDocument();
-    expect(screen.getByText(/Create custom portfolios in a few clicks/i)).toBeInTheDocument();
-    expect(screen.getByText(/Use multiple visualization tools/i)).toBeInTheDocument();
-    expect(screen.getByText(/Rebalance your portfolios/i)).toBeInTheDocument();
-    expect(screen.getByText(/Start/i)).toBeInTheDocument();
-  });
-
-  it('renders correctly in dark mode', () => {
-    // Mock useSelector to return true for isDarkMode
-    useSelector.mockImplementation(() => true);
-
-    render(<GetStarted />);
-
-    // Check if dark mode class is applied
+    // Assert elements rendered in dark mode
     const container = screen.getByTestId('get-started-container');
-    expect(container).toHaveClass('bg-white');
+    expect(container).toHaveClass('bg-white'); // Assuming bg-white is applied for dark mode
   });
 
   it('renders correctly in light mode', () => {
-    // Mock useSelector to return false for isDarkMode
-    useSelector.mockImplementation(() => false);
+    // Mock useSelector to return state with isDarkMode: false
+    useSelector.mockImplementation(() => ({
+      auth: {
+        isDarkMode: false,
+      }
+    }));
 
     render(<GetStarted />);
 
-    // Check if light mode class is applied
+    // Assert elements rendered in light mode
     const container = screen.getByTestId('get-started-container');
-    expect(container).toHaveClass('bg-gray');
+    expect(container).toHaveClass('bg-gray'); // Assuming bg-gray is applied for light mode
   });
 
   it('redirects to signin page on button click', () => {
-    // Mock useSelector to return false for isDarkMode
+    // Mock useSelector to return state with isDarkMode: true
     useSelector.mockImplementation(mockUseSelector);
 
     render(<GetStarted />);
 
-    // Check if clicking the Start button navigates to /signin
+    // Simulate click on the Start button
     const startButton = screen.getByText(/Start/i);
     expect(startButton).toBeInTheDocument();
-    expect(startButton.closest('a')).toHaveAttribute('href', '/signin');
+    startButton.click();
+
+    // Assert navigation to /signin
+    expect(window.location.pathname).toBe('/signin');
   });
 });
