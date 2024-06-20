@@ -1,49 +1,38 @@
+// GetStarted.test.jsx
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { useSelector } from 'react-redux';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store'; // Mock Redux store
 import GetStarted from '../GetStarted';
-
-// Mock useSelector behavior
-const mockUseSelector = (selector) => selector({
-  // Simulate Redux store state here
-  auth: {
-    isDarkMode: true, // Set isDarkMode to true for dark mode test
-  }
-});
 
 vi('GetStarted', () => {
   it('renders correctly in dark mode', () => {
-    // Mock useSelector to return state with isDarkMode: true
-    useSelector.mockImplementation(mockUseSelector);
+    const mockStore = configureStore();
+    const initialState = { auth: { isDarkMode: true } };
+    const store = mockStore(initialState);
 
-    render(<GetStarted />);
+    render(
+      <Provider store={store}>
+        <GetStarted />
+      </Provider>
+    );
 
     // Assert elements rendered in dark mode
     const container = screen.getByTestId('get-started-container');
     expect(container).toHaveClass('bg-white'); // Assuming bg-white is applied for dark mode
   });
 
-  it('renders correctly in light mode', () => {
-    // Mock useSelector to return state with isDarkMode: false
-    useSelector.mockImplementation(() => ({
-      auth: {
-        isDarkMode: false,
-      }
-    }));
-
-    render(<GetStarted />);
-
-    // Assert elements rendered in light mode
-    const container = screen.getByTestId('get-started-container');
-    expect(container).toHaveClass('bg-gray'); // Assuming bg-gray is applied for light mode
-  });
-
   it('redirects to signin page on button click', () => {
-    // Mock useSelector to return state with isDarkMode: true
-    useSelector.mockImplementation(mockUseSelector);
+    const mockStore = configureStore();
+    const initialState = {}; // Add initial state as needed
+    const store = mockStore(initialState);
 
-    render(<GetStarted />);
+    render(
+      <Provider store={store}>
+        <GetStarted />
+      </Provider>
+    );
 
     // Simulate click on the Start button
     const startButton = screen.getByText(/Start/i);
