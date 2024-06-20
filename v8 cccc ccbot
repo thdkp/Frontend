@@ -1,0 +1,26 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import ChatbotComponent from './ChatbotComponent';
+import { RxCrossCircled } from 'react-icons/rx';
+
+describe('ChatbotComponent', () => {
+  it('renders the chatbot and cross icon', () => {
+    const mockCrossFunction = vi.fn();
+
+    render(<ChatbotComponent cross={mockCrossFunction} />);
+
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('calls the cross function when the cross icon is clicked', () => {
+    const mockCrossFunction = vi.fn();
+
+    render(<ChatbotComponent cross={mockCrossFunction} />);
+
+    const crossIcon = screen.getByRole('button');
+    fireEvent.click(crossIcon);
+
+    expect(mockCrossFunction).toHaveBeenCalledTimes(1);
+  });
+});
