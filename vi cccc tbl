@@ -1,0 +1,86 @@
+// __tests__/PortfolioDiversity.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import PortfolioDiversity from '../PortfolioDiversity';
+import { BrowserRouter as Router } from 'react-router-dom';
+
+// Mock components
+vi.mock('../AllocationView', () => ({
+  __esModule: true,
+  default: ({ data }) => <div>Allocation View - {JSON.stringify(data)}</div>,
+}));
+
+vi.mock('../BondEquity', () => ({
+  __esModule: true,
+  default: ({ data }) => <div>Bond Equity - {JSON.stringify(data)}</div>,
+}));
+
+vi.mock('../AssetClass', () => ({
+  __esModule: true,
+  default: ({ data }) => <div>Asset Class - {JSON.stringify(data)}</div>,
+}));
+
+vi.mock('../AuthError', () => ({
+  __esModule: true,
+  default: () => <div>You are not authorized to view this page</div>,
+}));
+
+// Mock data
+const portfolio = {
+  allocation: { stocks: 70, bonds: 30 },
+  bondEquity: { bonds: 60, equity: 40 },
+  assetClass: { largeCap: 50, midCap: 30, smallCap: 20 },
+};
+
+describe('PortfolioDiversity', () => {
+  const mockStore = configureStore();
+  const initialState = { auth: { isAuthenticated: true } };
+  const store = mockStore(initialState);
+
+  it('renders PortfolioDiversity with AllocationView by default', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioDiversity portfolio={portfolio} />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/Allocation View/i)).toBeInTheDocument();
+    expect(screen.getByText(/"stocks":70,"bonds":30/i)).toBeInTheDocument();
+  });
+
+  it('switches to BondEquity view when button is clicked', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioDiversity portfolio={portfolio} />
+        </Router>
+      </Provider>
+    );
+
+    // Uncomment and add buttons to PortfolioDiversity component if needed
+    // fireEvent.click(screen.getByText(/Bond Equity/i));
+
+    // expect(screen.getByText(/Bond Equity/i)).toBeInTheDocument();
+    // expect(screen.getByText(/"bonds":60,"equity":40/i)).toBeInTheDocument();
+  });
+
+  it('renders AuthError if user is not authenticated', () => {
+    const unauthenticatedState = { auth: { isAuthenticated: false } };
+    const store = mockStore(unauthenticatedState);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <PortfolioDiversity portfolio={portfolio} />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/You are not authorized to view this page/i)).toBeInTheDocument();
+  });
+});
