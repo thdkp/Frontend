@@ -1,0 +1,112 @@
+// __tests__/SignIn.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import SignIn from '../SignIn';
+import { BrowserRouter as Router } from 'react-router-dom';
+
+const mockFetch = vi.fn();
+
+global.fetch = mockFetch;
+
+describe('SignIn', () => {
+  const mockStore = configureStore();
+  const initialState = { theme: { isDarkMode: false } };
+  const store = mockStore(initialState);
+
+  beforeEach(() => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      headers: {
+        get: vi.fn((header) => {
+          if (header === 'accessToken') return 'mockAccessToken';
+          if (header === 'refreshToken') return 'mockRefreshToken';
+        }),
+      },
+      json: async () => ({ isAdmin: false }),
+    });
+  });
+
+  it('renders SignIn form', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/Welcome Back/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sign in/i)).toBeInTheDocument();
+  });
+
+  it('validates form input', async () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    fireEvent.click(screen.getByText(/Sign in/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/Password is required/i)).toBeInTheDocument();
+    });
+  });
+
+  it('submits form with valid input', async () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'Password1!' } });
+
+    fireEvent.click(screen.getByText(/Sign in/i));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${import.meta.env?.VITE_BACKEND_URL}/auth/login`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@example.com', password: 'Password1!' }),
+        })
+      );
+    });
+  });
+
+  it('shows error on failed submission', async () => {
+    mockFetch.mockResolvedValueOnce({
+      status: 401,
+    });
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <SignIn />
+        </Router>
+      </Provider>
+    );
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'wrong@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'WrongPassword1!' } });
+
+    fireEvent.click(screen.getByText(/Sign in/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/wrong credentials/i)).toBeInTheDocument();
+    });
+  });
+});
