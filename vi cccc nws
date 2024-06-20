@@ -1,0 +1,126 @@
+// __tests__/News.test.jsx
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import News from '../News';
+import { BrowserRouter as Router } from 'react-router-dom';
+
+// Mock fetch function
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve([
+      {
+        headline: 'Breaking News: Market hits all-time high',
+        timeDelta: '2',
+      },
+      {
+        headline: 'Local News: New park opens downtown',
+        timeDelta: '5',
+      },
+    ]),
+  })
+);
+
+const DUMMY_NEWS_DATA = [
+  {
+    headline: 'Apple releases new iPhone',
+    timeDelta: '1',
+  },
+  {
+    headline: 'Apple releases new iPhone',
+    timeDelta: '1',
+  },
+  {
+    headline: 'Apple releases new iPhone',
+    timeDelta: '1',
+  },
+  {
+    headline: 'Apple releases new iPhone',
+    timeDelta: '1',
+  },
+  {
+    headline: 'Apple releases new iPhone',
+    timeDelta: '1',
+  },
+  {
+    headline: 'Apple releases new iPhone',
+    timeDelta: '1',
+  }
+];
+
+describe('News Component', () => {
+  const mockStore = configureStore();
+  const initialState = { theme: { isDarkMode: false } };
+  const store = mockStore(initialState);
+
+  it('renders News component with fetched data', async () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <News />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/Today's news and events/i)).toBeInTheDocument();
+
+    // Wait for the fetch to complete and data to be rendered
+    await waitFor(() => {
+      expect(screen.getByText(/Breaking News: Market hits all-time high/i)).toBeInTheDocument();
+      expect(screen.getByText(/2 hour ago/i)).toBeInTheDocument();
+      expect(screen.getByText(/Local News: New park opens downtown/i)).toBeInTheDocument();
+      expect(screen.getByText(/5 hour ago/i)).toBeInTheDocument();
+    });
+  });
+
+  it('renders dummy news data if fetch fails', async () => {
+    // Mock fetch to reject
+    global.fetch.mockImplementationOnce(() =>
+      Promise.reject('API is down')
+    );
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <News />
+        </Router>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      DUMMY_NEWS_DATA.forEach(news => {
+        expect(screen.getByText(news.headline)).toBeInTheDocument();
+        expect(screen.getByText(/1 hour ago/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  it('applies dark mode correctly', () => {
+    const darkModeState = { theme: { isDarkMode: true } };
+    const store = mockStore(darkModeState);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <News />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/Today's news and events/i).parentElement).toHaveClass('bg-zinc-300');
+  });
+
+  it('renders light mode correctly', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <News />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/Today's news and events/i).parentElement).toHaveClass('bg-white');
+  });
+});
