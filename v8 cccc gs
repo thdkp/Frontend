@@ -43,3 +43,37 @@ vi('GetStarted', () => {
     expect(window.location.pathname).toBe('/signin');
   });
 });
+
+
+
+...
+
+// GetStarted.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import GetStarted from '../GetStarted';
+
+vi('GetStarted', () => {
+  it('redirects to signin page on button click', () => {
+    const mockStore = configureStore();
+    const initialState = {}; // Add initial state as needed
+    const store = mockStore(initialState);
+
+    render(
+      <Provider store={store}>
+        <GetStarted />
+      </Provider>
+    );
+
+    // Simulate click on the Start button
+    const startButton = screen.getByText(/Start/i);
+    expect(startButton).toBeInTheDocument();
+    startButton.click();
+
+    // Assert navigation to /signin
+    expect(window.location.pathname).toBe('/signin');
+  });
+});
