@@ -1,0 +1,61 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import EditUserModal from '../EditUserModal';
+
+const mockUser = {
+  name: 'John Doe',
+  email: 'john@example.com',
+  dob: '1990-01-01',
+};
+
+describe('EditUserModal', () => {
+  it('renders correctly when open', () => {
+    render(<EditUserModal user={mockUser} isOpen={true} onClose={vi.fn()} onSave={vi.fn()} />);
+
+    // Check if modal is rendered
+    expect(screen.getByText(/Edit User/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Date of Birth/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
+  });
+
+  it('does not render when closed', () => {
+    render(<EditUserModal user={mockUser} isOpen={false} onClose={vi.fn()} onSave={vi.fn()} />);
+
+    // Check if modal is not rendered
+    expect(screen.queryByText(/Edit User/i)).not.toBeInTheDocument();
+  });
+
+  it('calls onClose when cancel button is clicked', () => {
+    const mockOnClose = vi.fn();
+    render(<EditUserModal user={mockUser} isOpen={true} onClose={mockOnClose} onSave={vi.fn()} />);
+
+    const cancelButton = screen.getByText(/Cancel/i);
+    fireEvent.click(cancelButton);
+
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onSave with form data when save button is clicked', () => {
+    const mockOnSave = vi.fn();
+    render(<EditUserModal user={mockUser} isOpen={true} onClose={vi.fn()} onSave={mockOnSave} />);
+
+    fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: 'Jane Doe' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Date of Birth/i), { target: { value: '1995-05-05' } });
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'newpassword' } });
+
+    const saveButton = screen.getByText(/Save/i);
+    fireEvent.click(saveButton);
+
+    expect(mockOnSave).toHaveBeenCalledTimes(1);
+    expect(mockOnSave).toHaveBeenCalledWith({
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      dob: '1995-05-05',
+      password: 'newpassword',
+    });
+  });
+});
