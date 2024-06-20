@@ -1,0 +1,73 @@
+// __tests__/UserCard.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import UserCard from '../UserCard';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { logout } from '../redux/slices/user/userSlice';
+
+vi.mock('../redux/slices/user/userSlice', () => ({
+  logout: vi.fn(),
+}));
+
+describe('UserCard Component', () => {
+  const mockStore = configureStore();
+  const initialState = { auth: { isAuthenticated: true, user: { email: 'test@example.com', firstName: 'John', lastName: 'Doe' } } };
+  const store = mockStore(initialState);
+
+  it('renders user information when authenticated', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <UserCard />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/John/i)).toBeInTheDocument();
+    expect(screen.getByText(/Doe/i)).toBeInTheDocument();
+  });
+
+  it('handles logout correctly', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve({ message: 'Logged out' }),
+      })
+    );
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <UserCard />
+        </Router>
+      </Provider>
+    );
+
+    const logoutButton = screen.getByText(/logout/i);
+    fireEvent.click(logoutButton);
+
+    await waitFor(() => {
+      expect(logout).toHaveBeenCalled();
+    });
+  });
+
+  it('renders correctly when not authenticated', () => {
+    const notAuthenticatedState = { auth: { isAuthenticated: false, user: null } };
+    const store = mockStore(notAuthenticatedState);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <UserCard />
+        </Router>
+      </Provider>
+    );
+
+    expect(screen.queryByText(/test@example.com/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/John/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Doe/i)).not.toBeInTheDocument();
+  });
+});
