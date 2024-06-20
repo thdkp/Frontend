@@ -1,0 +1,103 @@
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter } from 'react-router-dom';
+import ChartDisplay from './ChartDisplay';
+import themeReducer, { selectIsDarkMode } from '../redux/slices/themeSlice';
+
+// Mock fetch API
+global.fetch = async () =>
+  ({
+    json: async () => ([
+      { date: '2021-07-01', value: 50000 },
+      { date: '2021-12-01', value: 75000 },
+      { date: '2022-06-01', value: 100000 },
+      { date: '2022-12-01', value: 125000 },
+      { date: '2023-06-01', value: 150000 },
+      { date: '2023-12-01', value: 252501 }
+    ]),
+  });
+
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+describe('ChartDisplay component', () => {
+  const mockPortfolio = [{ portfolioid: '1', worth: 252501 }];
+
+  it('renders chart with fetched data', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter>
+          <ChartDisplay portfolio={mockPortfolio} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(`${import.meta.env?.VITE_BACKEND_URL}/portfolio/history/1`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'accesstoken': sessionStorage.getItem('accessToken')
+      }
+    }));
+
+    expect(screen.getByText('Overall Performance')).toBeInTheDocument();
+    expect(screen.getByText('$252501')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Portfolio Value')).toBeInTheDocument();
+      expect(screen.getByText('Date')).toBeInTheDocument();
+      expect(screen.getByText('Value (USD)')).toBeInTheDocument();
+    });
+  });
+
+  it('renders chart with dark mode', async () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <MemoryRouter>
+          <ChartDisplay portfolio={mockPortfolio} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(`${import.meta.env?.VITE_BACKEND_URL}/portfolio/history/1`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'accesstoken': sessionStorage.getItem('accessToken')
+      }
+    }));
+
+    expect(screen.getByText('Overall Performance')).toBeInTheDocument();
+    expect(screen.getByText('$252501')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Portfolio Value')).toBeInTheDocument();
+      expect(screen.getByText('Date')).toBeInTheDocument();
+      expect(screen.getByText('Value (USD)')).toBeInTheDocument();
+    });
+  });
+
+  afterAll(() => {
+    global.fetch.mockClear();
+    delete global.fetch;
+  });
+});
