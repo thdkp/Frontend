@@ -1,75 +1,95 @@
-// Import necessary dependencies from vitest and react-testing-library
-import { render, screen, fireEvent, act } from 'vitest/react';
-import TodayStock from './TodayStock'; // Assuming the component is in the same directory
+// TodaysStocks.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import TodaysStocks from '../TodaysStocks';
 
-// Mock useSelector from react-redux to simulate dark mode state
-jest.mock('react-redux', () => ({
-  useSelector: jest.fn(),
-}));
+const mockFetch = vi.fn();
 
-describe('TodayStock Component', () => {
+global.fetch = mockFetch;
+
+const dummyData = {
+  gainers: [
+    { stockname: 'Stock A', stocksymbol: 'A', price: 100, change: 5 },
+    { stockname: 'Stock B', stocksymbol: 'B', price: 200, change: 10 },
+  ],
+  losers: [
+    { stockname: 'Stock C', stocksymbol: 'C', price: 50, change: -5 },
+    { stockname: 'Stock D', stocksymbol: 'D', price: 150, change: -10 },
+  ],
+  mostActive: [
+    { stockname: 'Stock E', stocksymbol: 'E', price: 300, change: 0 },
+    { stockname: 'Stock F', stocksymbol: 'F', price: 400, change: 15 },
+  ],
+};
+
+describe('TodaysStocks', () => {
+  const mockStore = configureStore();
+  const initialState = { theme: { isDarkMode: false } };
+  const store = mockStore(initialState);
+
   beforeEach(() => {
-    useSelector.mockReturnValue(false); // Mocking useSelector to return false (not in dark mode)
+    mockFetch.mockResolvedValueOnce({
+      json: async () => dummyData,
+    });
   });
 
-  it('renders component with initial state and buttons', async () => {
-    render(<TodayStock />);
+  it('renders correctly and fetches data', async () => {
+    render(
+      <Provider store={store}>
+        <TodaysStocks />
+      </Provider>
+    );
 
-    // Assert initial text in the component
-    expect(screen.getByText("Today's stocks")).toBeInTheDocument();
-
-    // Assert the presence of buttons
-    expect(screen.getByText('Gainers')).toBeInTheDocument();
-    expect(screen.getByText('Losers')).toBeInTheDocument();
-    expect(screen.getByText('Most Active')).toBeInTheDocument();
-
-    // Assert initial stock data display (assuming data loading completes)
-    await screen.findByText('Kotak S&P BSE Sensex ETF');
-    expect(screen.getByText('SENSEX1')).toBeInTheDocument();
-    expect(screen.getByText('$89.00')).toBeInTheDocument();
-  });
-
-  it('displays gainers when "Gainers" button is clicked', async () => {
-    render(<TodayStock />);
-
-    // Simulate clicking the Gainers button
-    await act(async () => {
-      fireEvent.click(screen.getByText('Gainers'));
+    await waitFor(() => {
+      expect(screen.getByText(/Today's stocks/i)).toBeInTheDocument();
     });
 
-    // Assert that the gainers data is displayed
-    await screen.findByText('Adani Total Gas Ltd');
-    expect(screen.getByText('ATGL')).toBeInTheDocument();
-    expect(screen.getByText('$1039.30')).toBeInTheDocument();
+    expect(screen.getByText('Stock A')).toBeInTheDocument();
+    expect(screen.getByText('Stock B')).toBeInTheDocument();
   });
 
-  it('displays losers when "Losers" button is clicked', async () => {
-    render(<TodayStock />);
+  it('displays gainers by default', async () => {
+    render(
+      <Provider store={store}>
+        <TodaysStocks />
+      </Provider>
+    );
 
-    // Simulate clicking the Losers button
-    await act(async () => {
-      fireEvent.click(screen.getByText('Losers'));
+    await waitFor(() => {
+      expect(screen.getByText('Stock A')).toBeInTheDocument();
     });
-
-    // Assert that the losers data is displayed
-    await screen.findByText('Adani Power Ltd');
-    expect(screen.getByText('ADANIPOWER')).toBeInTheDocument();
-    expect(screen.getByText('$755.80')).toBeInTheDocument();
   });
 
-  it('displays most active stocks when "Most Active" button is clicked', async () => {
-    render(<TodayStock />);
+  it('displays losers when Losers button is clicked', async () => {
+    render(
+      <Provider store={store}>
+        <TodaysStocks />
+      </Provider>
+    );
 
-    // Simulate clicking the Most Active button
-    await act(async () => {
-      fireEvent.click(screen.getByText('Most Active'));
+    fireEvent.click(screen.getByText(/Losers/i));
+
+    await waitFor(() => {
+      expect(screen.getByText('Stock C')).toBeInTheDocument();
+      expect(screen.getByText('Stock D')).toBeInTheDocument();
     });
-
-    // Assert that the most active stocks data is displayed
-    await screen.findByText('Adani Enterprises Ltd');
-    expect(screen.getByText('ADANIENT')).toBeInTheDocument();
-    expect(screen.getByText('$3411.35')).toBeInTheDocument();
   });
 
-  // Add more tests as needed to cover edge cases and additional functionality
+  it('displays most active stocks when Most Active button is clicked', async () => {
+    render(
+      <Provider store={store}>
+        <TodaysStocks />
+      </Provider>
+    );
+
+    fireEvent.click(screen.getByText(/Most Active/i));
+
+    await waitFor(() => {
+      expect(screen.getByText('Stock E')).toBeInTheDocument();
+      expect(screen.getByText('Stock F')).toBeInTheDocument();
+    });
+  });
 });
