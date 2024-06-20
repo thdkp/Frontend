@@ -1,0 +1,96 @@
+// __tests__/MarketSectors.test.jsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import MarketSectors from '../MarketSectors';
+import { selectIsDarkMode } from '../redux/slices/themeSlice';
+
+vi.mock('../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+}));
+
+describe('MarketSectors Component', () => {
+  const mockStore = configureStore();
+  
+  const renderComponent = (isDarkMode) => {
+    const initialState = { theme: { isDarkMode } };
+    const store = mockStore(initialState);
+
+    render(
+      <Provider store={store}>
+        <MarketSectors />
+      </Provider>
+    );
+  };
+
+  it('renders stock data correctly in light mode', async () => {
+    global.fetch = vi.fn().mockImplementation(() =>
+      Promise.reject(new Error('API is down'))
+    );
+    
+    renderComponent(false);
+
+    const stockNames = dummyData.map(stock => stock.name);
+    const stockValues = dummyData.map(stock => stock.value.toFixed(2));
+    const stockChanges = dummyData.map(stock => `${stock.change > 0 ? '▲' : '▼'} ${stock.change.toFixed(2)}%`);
+
+    for (let name of stockNames) {
+      expect(await screen.findByText(name)).toBeInTheDocument();
+    }
+
+    for (let value of stockValues) {
+      expect(await screen.findByText(value)).toBeInTheDocument();
+    }
+
+    for (let change of stockChanges) {
+      expect(await screen.findByText(change)).toBeInTheDocument();
+    }
+  });
+
+  it('renders stock data correctly in dark mode', async () => {
+    global.fetch = vi.fn().mockImplementation(() =>
+      Promise.reject(new Error('API is down'))
+    );
+
+    renderComponent(true);
+
+    const stockNames = dummyData.map(stock => stock.name);
+    const stockValues = dummyData.map(stock => stock.value.toFixed(2));
+    const stockChanges = dummyData.map(stock => `${stock.change > 0 ? '▲' : '▼'} ${stock.change.toFixed(2)}%`);
+
+    for (let name of stockNames) {
+      expect(await screen.findByText(name)).toBeInTheDocument();
+    }
+
+    for (let value of stockValues) {
+      expect(await screen.findByText(value)).toBeInTheDocument();
+    }
+
+    for (let change of stockChanges) {
+      expect(await screen.findByText(change)).toBeInTheDocument();
+    }
+  });
+
+  it('applies correct color classes based on stock change', async () => {
+    global.fetch = vi.fn().mockImplementation(() =>
+      Promise.reject(new Error('API is down'))
+    );
+
+    renderComponent(false);
+
+    const positiveChange = dummyData.filter(stock => stock.isPositive).map(stock => `${stock.change > 0 ? '▲' : '▼'} ${stock.change.toFixed(2)}%`);
+    const negativeChange = dummyData.filter(stock => !stock.isPositive).map(stock => `${stock.change > 0 ? '▲' : '▼'} ${stock.change.toFixed(2)}%`);
+
+    for (let change of positiveChange) {
+      const element = await screen.findByText(change);
+      expect(element).toHaveClass('text-green-500');
+    }
+
+    for (let change of negativeChange) {
+      const element = await screen.findByText(change);
+      expect(element).toHaveClass('text-red-500');
+    }
+  });
+});
