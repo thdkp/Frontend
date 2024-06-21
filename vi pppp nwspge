@@ -1,0 +1,124 @@
+// __tests__/NewsPage.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import NewsPage from '../NewsPage';
+import rootReducer from '../redux/slices';
+
+const mockState = {
+  theme: {
+    isDarkMode: false,
+  },
+};
+
+const renderWithProviders = (ui, { preloadedState = mockState, store = createStore(rootReducer, preloadedState), ...renderOptions } = {}) => {
+  const Wrapper = ({ children }) => (
+    <Provider store={store}>
+      <MemoryRouter>
+        {children}
+      </MemoryRouter>
+    </Provider>
+  );
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
+
+// Mock the fetch function globally
+global.fetch = vi.fn();
+
+describe('NewsPage Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders the table columns correctly', () => {
+    renderWithProviders(<NewsPage />);
+
+    expect(screen.getByText(/Stock Symbol/i)).toBeInTheDocument();
+    expect(screen.getByText(/Headline/i)).toBeInTheDocument();
+    expect(screen.getByText(/Description/i)).toBeInTheDocument();
+    expect(screen.getByText(/Affects Stock/i)).toBeInTheDocument();
+    expect(screen.getByText(/Published At/i)).toBeInTheDocument();
+  });
+
+  it('fetches and displays news data', async () => {
+    const mockNewsData = [
+      { id: 1, stocksymbol: 'AAPL', headline: 'Apple news', description: 'New iPhone released', affectStock: true, createdAt: '2024-06-10T10:00:00Z' },
+      { id: 2, stocksymbol: 'TSLA', headline: 'Tesla news', description: 'New car model', affectStock: true, createdAt: '2024-06-11T11:00:00Z' },
+    ];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockNewsData
+    });
+
+    renderWithProviders(<NewsPage />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('AAPL')).toBeInTheDocument();
+    expect(screen.getByText('Apple news')).toBeInTheDocument();
+    expect(screen.getByText('New iPhone released')).toBeInTheDocument();
+    expect(screen.getByText('Yes')).toBeInTheDocument();
+    expect(screen.getByText('6/10/2024, 10:00:00 AM')).toBeInTheDocument();
+
+    expect(screen.getByText('TSLA')).toBeInTheDocument();
+    expect(screen.getByText('Tesla news')).toBeInTheDocument();
+    expect(screen.getByText('New car model')).toBeInTheDocument();
+    expect(screen.getByText('Yes')).toBeInTheDocument();
+    expect(screen.getByText('6/11/2024, 11:00:00 AM')).toBeInTheDocument();
+  });
+
+  it('handles pagination correctly', async () => {
+    const mockNewsData = Array.from({ length: 10 }, (_, i) => ({
+      id: i + 1,
+      stocksymbol: `SYM${i + 1}`,
+      headline: `Headline ${i + 1}`,
+      description: `Description ${i + 1}`,
+      affectStock: true,
+      createdAt: `2024-06-1${i + 1}T10:00:00Z`,
+    }));
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockNewsData
+    });
+
+    renderWithProviders(<NewsPage />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('SYM1')).toBeInTheDocument();
+    expect(screen.getByText('SYM7')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/Next/i));
+
+    await waitFor(() => {
+      expect(screen.getByText('SYM8')).toBeInTheDocument();
+      expect(screen.getByText('SYM10')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/Previous/i));
+
+    await waitFor(() => {
+      expect(screen.getByText('SYM1')).toBeInTheDocument();
+      expect(screen.getByText('SYM7')).toBeInTheDocument();
+    });
+  });
+
+  it('renders correctly in dark mode', () => {
+    const darkModeState = {
+      ...mockState,
+      theme: {
+        isDarkMode: true,
+      },
+    };
+
+    renderWithProviders(<NewsPage />, { preloadedState: darkModeState });
+
+    expect(screen.getByText(/News/i)).toHaveClass('text-white');
+    expect(screen.getByRole('table')).toHaveClass('bg-black');
+  });
+});
