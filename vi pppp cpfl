@@ -1,0 +1,97 @@
+// __tests__/CreatePortfolio.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import CreatePortfolio from '../CreatePortfolio';
+import rootReducer from '../redux/slices';
+
+// Mock the fetch function globally
+global.fetch = vi.fn();
+
+const renderWithProviders = (ui, { preloadedState, store = createStore(rootReducer, preloadedState), ...renderOptions } = {}) => {
+  const Wrapper = ({ children }) => (
+    <Provider store={store}>
+      <MemoryRouter>
+        {children}
+      </MemoryRouter>
+    </Provider>
+  );
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
+
+describe('CreatePortfolio Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders the form fields correctly', () => {
+    renderWithProviders(<CreatePortfolio />);
+
+    expect(screen.getByLabelText(/Name of Portfolio/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Description of Portfolio/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Capital to be Invested/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Risk Appetite/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Portfolio/i })).toBeInTheDocument();
+  });
+
+  it('updates the input fields on change', () => {
+    renderWithProviders(<CreatePortfolio />);
+
+    const nameInput = screen.getByLabelText(/Name of Portfolio/i);
+    const descriptionInput = screen.getByLabelText(/Description of Portfolio/i);
+    const capitalInput = screen.getByLabelText(/Capital to be Invested/i);
+    const riskAppetiteSlider = screen.getByLabelText(/Risk Appetite/i);
+
+    fireEvent.change(nameInput, { target: { value: 'My Portfolio' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Description of my portfolio' } });
+    fireEvent.change(capitalInput, { target: { value: '10000' } });
+    fireEvent.change(riskAppetiteSlider, { target: { value: '75' } });
+
+    expect(nameInput.value).toBe('My Portfolio');
+    expect(descriptionInput.value).toBe('Description of my portfolio');
+    expect(capitalInput.value).toBe('10000');
+    expect(riskAppetiteSlider.value).toBe('75');
+  });
+
+  it('submits the form and handles success response', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: 'Portfolio created successfully!' }),
+    });
+
+    renderWithProviders(<CreatePortfolio />);
+
+    const nameInput = screen.getByLabelText(/Name of Portfolio/i);
+    const descriptionInput = screen.getByLabelText(/Description of Portfolio/i);
+    const capitalInput = screen.getByLabelText(/Capital to be Invested/i);
+    const riskAppetiteSlider = screen.getByLabelText(/Risk Appetite/i);
+    const submitButton = screen.getByRole('button', { name: /Create Portfolio/i });
+
+    fireEvent.change(nameInput, { target: { value: 'My Portfolio' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Description of my portfolio' } });
+    fireEvent.change(capitalInput, { target: { value: '10000' } });
+    fireEvent.change(riskAppetiteSlider, { target: { value: '75' } });
+
+    fireEvent.click(submitButton);
+
+    // Wait for the redirect to occur
+    expect(await screen.findByText(/Redirecting.../i)).toBeInTheDocument();
+  });
+
+  it('handles fetch error', async () => {
+    fetch.mockRejectedValueOnce(new Error('Network Error'));
+
+    renderWithProviders(<CreatePortfolio />);
+
+    const submitButton = screen.getByRole('button', { name: /Create Portfolio/i });
+
+    fireEvent.click(submitButton);
+
+    // Wait for the error to appear in console
+    // Note: To properly check for console errors, you might need a spy
+    await screen.findByText(/Error:/i);
+  });
+});
