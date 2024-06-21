@@ -1,0 +1,41 @@
+import React from 'react';
+
+import MarketStatus from '../components/MarketStatus';
+import MarketSectors from '../components/MarketSectors';
+import GetStarted from '../components/GetStarted';
+import News from '../components/News';
+import TodaysStocks from '../components/TodaysStocks';
+import UserCard from '../components/UserCard';
+import { Link } from 'react-router-dom';
+import {selectIsDarkMode } from '../redux/slices/themeSlice';
+import { useSelector } from "react-redux";
+
+
+const Home = () => {
+  const isDarkMode = useSelector(selectIsDarkMode);
+  return (
+    <div className={`  md:min-h-screen ${isDarkMode? 'dark:bg-gray-900': ' bg-gray-100' }`}>
+
+      <MarketStatus />
+      {/* <UserCard/> */}
+      <div className="p-6 flex flex-col md:block">
+        <div className="max-w-5xl md:mx-auto">
+          {/* <Link to="/stockuniverse"> */}
+            <MarketSectors />
+          {/* </Link> */}
+          <div className=" flex flex-col gap-y-5  items-center justify-center md:items-start  md:flex md:flex-row  md:justify-between mt-6">
+            <div className="md:w-2/3 md:mr-6 ">
+              <GetStarted />
+              <TodaysStocks />
+            </div>
+            <div className=" w-[89vw] md:w-1/3">
+              <News />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Home;
