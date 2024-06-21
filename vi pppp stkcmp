@@ -1,0 +1,140 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import StockComparision from '../components/StockComparision';
+import '@testing-library/jest-dom/extend-expect';
+
+// Mock the fetch function
+global.fetch = vi.fn();
+
+beforeEach(() => {
+  fetch.mockClear();
+});
+
+const dummyStockDetails = {
+  AAPL: {
+    stockname: 'Apple Inc.',
+    stockprice: 145.09,
+    'oneWeek': [
+      { date: '2023-06-01', price: 142 },
+      { date: '2023-06-02', price: 143 },
+      { date: '2023-06-03', price: 144 },
+      { date: '2023-06-04', price: 145 },
+      { date: '2023-06-05', price: 146 },
+      { date: '2023-06-06', price: 147 },
+      { date: '2023-06-07', price: 148 }
+    ]
+  }
+};
+
+const dummyStockData = [
+  { stocksymbol: 'AAPL', price: 145.09, change: 5 }
+];
+
+describe('StockComparision Component', () => {
+  it('renders without crashing', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockData
+    });
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockDetails
+    });
+
+    render(<StockComparision />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Compare Stocks')).toBeInTheDocument();
+    });
+  });
+
+  it('adds and removes stocks correctly', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockData
+    });
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockDetails
+    });
+
+    render(<StockComparision />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Compare Stocks')).toBeInTheDocument();
+    });
+
+    const select = screen.getByPlaceholderText('Add Stock');
+    fireEvent.change(select, { target: { value: 'AAPL' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('AAPL')).toBeInTheDocument();
+    });
+
+    const removeButton = screen.getByText('Remove');
+    fireEvent.click(removeButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('AAPL')).not.toBeInTheDocument();
+    });
+  });
+
+  it('changes the time range correctly', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockData
+    });
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockDetails
+    });
+
+    render(<StockComparision />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Compare Stocks')).toBeInTheDocument();
+    });
+
+    const oneWeekButton = screen.getByText('1 Week');
+    const oneMonthButton = screen.getByText('1 Month');
+    const oneYearButton = screen.getByText('1 Year');
+
+    fireEvent.click(oneMonthButton);
+    expect(oneMonthButton).toHaveClass('bg-blue-500');
+    expect(oneWeekButton).toHaveClass('bg-gray-300');
+    expect(oneYearButton).toHaveClass('bg-gray-300');
+
+    fireEvent.click(oneYearButton);
+    expect(oneYearButton).toHaveClass('bg-blue-500');
+    expect(oneWeekButton).toHaveClass('bg-gray-300');
+    expect(oneMonthButton).toHaveClass('bg-gray-300');
+  });
+
+  it('renders the chart with correct data', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockData
+    });
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => dummyStockDetails
+    });
+
+    render(<StockComparision />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Compare Stocks')).toBeInTheDocument();
+    });
+
+    const select = screen.getByPlaceholderText('Add Stock');
+    fireEvent.change(select, { target: { value: 'AAPL' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('AAPL')).toBeInTheDocument();
+    });
+
+    const canvas = screen.getByRole('img');
+    expect(canvas).toBeInTheDocument();
+  });
+});
