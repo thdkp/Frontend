@@ -4,9 +4,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
 import Portfolio from '../Portfolio';
-import rootReducer from '../redux/slices';
+import themeReducer from '../redux/slices/themeSlice';
+import authReducer from '../redux/slices/authSlice';
 
 const mockState = {
   theme: {
@@ -18,12 +19,20 @@ const mockState = {
   },
 };
 
-const renderWithProviders = (ui, { preloadedState = mockState, store = createStore(rootReducer, preloadedState), ...renderOptions } = {}) => {
+const renderWithProviders = (
+  ui,
+  {
+    preloadedState = mockState,
+    store = configureStore({
+      reducer: { theme: themeReducer, auth: authReducer },
+      preloadedState,
+    }),
+    ...renderOptions
+  } = {}
+) => {
   const Wrapper = ({ children }) => (
     <Provider store={store}>
-      <MemoryRouter>
-        {children}
-      </MemoryRouter>
+      <MemoryRouter>{children}</MemoryRouter>
     </Provider>
   );
   return render(ui, { wrapper: Wrapper, ...renderOptions });
@@ -45,7 +54,7 @@ describe('Portfolio Component', () => {
 
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockPortfolioData
+      json: async () => mockPortfolioData,
     });
 
     renderWithProviders(<Portfolio />);
@@ -97,7 +106,7 @@ describe('Portfolio Component', () => {
 
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockPortfolioData
+      json: async () => mockPortfolioData,
     });
 
     renderWithProviders(<Portfolio />);
