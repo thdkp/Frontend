@@ -1,0 +1,146 @@
+// __tests__/EditStockUniverse.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import EditStockUniverse from '../EditStockUniverse';
+import rootReducer from '../redux/slices';
+
+// Mock the fetch function globally
+global.fetch = vi.fn();
+
+const renderWithProviders = (ui, { preloadedState, store = createStore(rootReducer, preloadedState), ...renderOptions } = {}) => {
+  const Wrapper = ({ children }) => (
+    <Provider store={store}>
+      <MemoryRouter>
+        {children}
+      </MemoryRouter>
+    </Provider>
+  );
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
+
+describe('EditStockUniverse Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders the table columns correctly', () => {
+    renderWithProviders(<EditStockUniverse />);
+
+    expect(screen.getByText(/Stock Name/i)).toBeInTheDocument();
+    expect(screen.getByText(/Stock Symbol/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sector/i)).toBeInTheDocument();
+    expect(screen.getByText(/Opening Value/i)).toBeInTheDocument();
+    expect(screen.getByText(/Closing Value/i)).toBeInTheDocument();
+    expect(screen.getByText(/% Change/i)).toBeInTheDocument();
+    expect(screen.getByText(/Actions/i)).toBeInTheDocument();
+  });
+
+  it('fetches and displays stock data', async () => {
+    const mockStockData = [
+      { stockname: 'Apple', stocksymbol: 'AAPL', sector: 'Technology', openingprice: 150, closingprice: 155 },
+      { stockname: 'Microsoft', stocksymbol: 'MSFT', sector: 'Technology', openingprice: 250, closingprice: 255 }
+    ];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockStockData
+    });
+
+    renderWithProviders(<EditStockUniverse />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('Apple')).toBeInTheDocument();
+    expect(screen.getByText('Microsoft')).toBeInTheDocument();
+  });
+
+  it('opens edit modal with correct stock data on edit button click', async () => {
+    const mockStockData = [
+      { stockname: 'Apple', stocksymbol: 'AAPL', sector: 'Technology', openingprice: 150, closingprice: 155 }
+    ];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockStockData
+    });
+
+    renderWithProviders(<EditStockUniverse />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText(/Edit/i));
+
+    expect(screen.getByText(/Edit Stock/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Opening Value/i).value).toBe('150');
+    expect(screen.getByLabelText(/Closing Value/i).value).toBe('155');
+  });
+
+  it('handles stock data update correctly', async () => {
+    const mockStockData = [
+      { stockname: 'Apple', stocksymbol: 'AAPL', sector: 'Technology', openingprice: 150, closingprice: 155 }
+    ];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockStockData
+    });
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: 'Stock updated successfully!' })
+    });
+
+    renderWithProviders(<EditStockUniverse />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText(/Edit/i));
+
+    const openingValueInput = screen.getByLabelText(/Opening Value/i);
+    const closingValueInput = screen.getByLabelText(/Closing Value/i);
+
+    fireEvent.change(openingValueInput, { target: { value: '160' } });
+    fireEvent.change(closingValueInput, { target: { value: '165' } });
+
+    fireEvent.click(screen.getByText(/Save/i));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    expect(openingValueInput.value).toBe('160');
+    expect(closingValueInput.value).toBe('165');
+  });
+
+  it('handles pagination correctly', async () => {
+    const mockStockData = Array.from({ length: 15 }, (_, i) => ({
+      stockname: `Stock ${i + 1}`,
+      stocksymbol: `SYM${i + 1}`,
+      sector: 'Technology',
+      openingprice: 100 + i,
+      closingprice: 105 + i
+    }));
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockStockData
+    });
+
+    renderWithProviders(<EditStockUniverse />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Ensure that initial data is loaded
+    expect(screen.getByText('Stock 1')).toBeInTheDocument();
+    expect(screen.getByText('Stock 10')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/Next/i));
+
+    await waitFor(() => {
+      expect(screen.getByText('Stock 11')).toBeInTheDocument();
+      expect(screen.getByText('Stock 15')).toBeInTheDocument();
+    });
+  });
+});
