@@ -1,41 +1,75 @@
+// __tests__/Home.test.jsx
 import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import Home from '../Home';
+import themeReducer, { selectIsDarkMode } from '../redux/slices/themeSlice';
+import authReducer from '../redux/slices/authSlice';
 
-import MarketStatus from '../components/MarketStatus';
-import MarketSectors from '../components/MarketSectors';
-import GetStarted from '../components/GetStarted';
-import News from '../components/News';
-import TodaysStocks from '../components/TodaysStocks';
-import UserCard from '../components/UserCard';
-import { Link } from 'react-router-dom';
-import {selectIsDarkMode } from '../redux/slices/themeSlice';
-import { useSelector } from "react-redux";
+vi.mock('react-redux', async () => {
+  const actual = await vi.importActual('react-redux');
+  return {
+    ...actual,
+    useSelector: vi.fn(),
+  };
+});
 
+describe('Home Component', () => {
+  const mockState = {
+    theme: {
+      isDarkMode: false,
+    },
+    auth: {
+      isAuthenticated: true,
+      user: { id: 1, name: 'Test User' },
+    },
+  };
 
-const Home = () => {
-  const isDarkMode = useSelector(selectIsDarkMode);
-  return (
-    <div className={`  md:min-h-screen ${isDarkMode? 'dark:bg-gray-900': ' bg-gray-100' }`}>
+  const renderWithProviders = (ui, { preloadedState = mockState, store = configureStore({
+      reducer: { theme: themeReducer, auth: authReducer },
+      preloadedState,
+    }), ...renderOptions } = {}) => {
+    const Wrapper = ({ children }) => (
+      <Provider store={store}>
+        <MemoryRouter>
+          {children}
+        </MemoryRouter>
+      </Provider>
+    );
+    return render(ui, { wrapper: Wrapper, ...renderOptions });
+  };
 
-      <MarketStatus />
-      {/* <UserCard/> */}
-      <div className="p-6 flex flex-col md:block">
-        <div className="max-w-5xl md:mx-auto">
-          {/* <Link to="/stockuniverse"> */}
-            <MarketSectors />
-          {/* </Link> */}
-          <div className=" flex flex-col gap-y-5  items-center justify-center md:items-start  md:flex md:flex-row  md:justify-between mt-6">
-            <div className="md:w-2/3 md:mr-6 ">
-              <GetStarted />
-              <TodaysStocks />
-            </div>
-            <div className=" w-[89vw] md:w-1/3">
-              <News />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+  it('renders child components correctly', () => {
+    renderWithProviders(<Home />);
 
-export default Home;
+    expect(screen.getByText(/Market Status/i)).toBeInTheDocument();
+    expect(screen.getByText(/Market Sectors/i)).toBeInTheDocument();
+    expect(screen.getByText(/Get Started/i)).toBeInTheDocument();
+    expect(screen.getByText(/Today's Stocks/i)).toBeInTheDocument();
+    expect(screen.getByText(/News/i)).toBeInTheDocument();
+  });
+
+  it('renders correctly in dark mode', () => {
+    const darkModeState = {
+      ...mockState,
+      theme: {
+        isDarkMode: true,
+      },
+    };
+
+    renderWithProviders(<Home />, { preloadedState: darkModeState });
+
+    const container = screen.getByTestId('container');
+    expect(container).toHaveClass('dark:bg-gray-900');
+  });
+
+  it('renders correctly in light mode', () => {
+    renderWithProviders(<Home />);
+
+    const container = screen.getByTestId('container');
+    expect(container).toHaveClass('bg-gray-100');
+  });
+});
