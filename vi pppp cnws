@@ -1,0 +1,101 @@
+// __tests__/CreateNews.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import CreateNews from '../CreateNews';
+
+// Mock the fetch function globally
+global.fetch = vi.fn();
+
+describe('CreateNews Component', () => {
+  beforeEach(() => {
+    // Clear all instances and calls to constructor and all methods:
+    fetch.mockClear();
+  });
+
+  it('renders the form fields correctly', () => {
+    render(<CreateNews />);
+
+    expect(screen.getByLabelText(/Stock Symbol/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Headline/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Affects Stock Negatively/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create News/i })).toBeInTheDocument();
+  });
+
+  it('updates the input fields on change', () => {
+    render(<CreateNews />);
+
+    const stockSymbolInput = screen.getByLabelText(/Stock Symbol/i);
+    const headlineInput = screen.getByLabelText(/Headline/i);
+    const descriptionInput = screen.getByLabelText(/Description/i);
+    const affectStockCheckbox = screen.getByLabelText(/Affects Stock Negatively/i);
+
+    fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
+    fireEvent.change(headlineInput, { target: { value: 'New iPhone Released' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Apple has released a new iPhone model.' } });
+    fireEvent.click(affectStockCheckbox);
+
+    expect(stockSymbolInput.value).toBe('AAPL');
+    expect(headlineInput.value).toBe('New iPhone Released');
+    expect(descriptionInput.value).toBe('Apple has released a new iPhone model.');
+    expect(affectStockCheckbox.checked).toBe(true);
+  });
+
+  it('submits the form and handles success response', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: 'News created successfully!' }),
+    });
+
+    render(<CreateNews />);
+
+    const stockSymbolInput = screen.getByLabelText(/Stock Symbol/i);
+    const headlineInput = screen.getByLabelText(/Headline/i);
+    const descriptionInput = screen.getByLabelText(/Description/i);
+    const submitButton = screen.getByRole('button', { name: /Create News/i });
+
+    fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
+    fireEvent.change(headlineInput, { target: { value: 'New iPhone Released' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Apple has released a new iPhone model.' } });
+    
+    fireEvent.click(submitButton);
+
+    // Wait for the alert to appear
+    expect(await screen.findByText(/News created successfully!/i)).toBeInTheDocument();
+
+    // Check if the form is reset
+    expect(stockSymbolInput.value).toBe('');
+    expect(headlineInput.value).toBe('');
+    expect(descriptionInput.value).toBe('');
+    expect(screen.getByLabelText(/Affects Stock Negatively/i).checked).toBe(false);
+  });
+
+  it('handles failed response', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+    });
+
+    render(<CreateNews />);
+
+    const submitButton = screen.getByRole('button', { name: /Create News/i });
+
+    fireEvent.click(submitButton);
+
+    // Wait for the alert to appear
+    expect(await screen.findByText(/Failed to create news./i)).toBeInTheDocument();
+  });
+
+  it('handles fetch error', async () => {
+    fetch.mockRejectedValueOnce(new Error('Network Error'));
+
+    render(<CreateNews />);
+
+    const submitButton = screen.getByRole('button', { name: /Create News/i });
+
+    fireEvent.click(submitButton);
+
+    // Wait for the alert to appear
+    expect(await screen.findByText(/An error occurred while creating news./i)).toBeInTheDocument();
+  });
+});
