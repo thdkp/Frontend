@@ -1,0 +1,110 @@
+// __tests__/Portfolio.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import Portfolio from '../Portfolio';
+import rootReducer from '../redux/slices';
+
+const mockState = {
+  theme: {
+    isDarkMode: false,
+  },
+  auth: {
+    isAuthenticated: true,
+    user: { id: 1, name: 'Test User' },
+  },
+};
+
+const renderWithProviders = (ui, { preloadedState = mockState, store = createStore(rootReducer, preloadedState), ...renderOptions } = {}) => {
+  const Wrapper = ({ children }) => (
+    <Provider store={store}>
+      <MemoryRouter>
+        {children}
+      </MemoryRouter>
+    </Provider>
+  );
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
+
+// Mock the fetch function globally
+global.fetch = vi.fn();
+
+describe('Portfolio Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders the PortfolioTable and PortfolioDiversity components when authenticated', async () => {
+    const mockPortfolioData = [
+      { portfolioid: 1, name: 'Portfolio 1', stocks: [] },
+      { portfolioid: 2, name: 'Portfolio 2', stocks: [] },
+    ];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockPortfolioData
+    });
+
+    renderWithProviders(<Portfolio />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Portfolio 1'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    });
+  });
+
+  it('displays AuthError component when not authenticated', () => {
+    const unauthenticatedState = {
+      ...mockState,
+      auth: {
+        isAuthenticated: false,
+        user: null,
+      },
+    };
+
+    renderWithProviders(<Portfolio />, { preloadedState: unauthenticatedState });
+
+    expect(screen.getByText(/Please login to view your portfolio/i)).toBeInTheDocument();
+  });
+
+  it('renders correctly in dark mode', async () => {
+    const darkModeState = {
+      ...mockState,
+      theme: {
+        isDarkMode: true,
+      },
+    };
+
+    renderWithProviders(<Portfolio />, { preloadedState: darkModeState });
+
+    expect(screen.getByRole('div')).toHaveClass('bg-black');
+  });
+
+  it('fetches and displays portfolio data', async () => {
+    const mockPortfolioData = [
+      { portfolioid: 1, name: 'Portfolio 1', stocks: [] },
+      { portfolioid: 2, name: 'Portfolio 2', stocks: [] },
+    ];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockPortfolioData
+    });
+
+    renderWithProviders(<Portfolio />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+  });
+});
