@@ -1,0 +1,172 @@
+// __tests__/PortfolioDetail.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import PortfolioDetail from '../PortfolioDetail';
+import rootReducer from '../redux/slices';
+import AuthError from '../components/AuthError';
+import Loader from '../components/Loader';
+import ModalLoader from '../components/ModalLoader';
+import AcceptRejectPortfolioModal from '../components/AcceptRejectPortfolioModal';
+
+const mockState = {
+  theme: {
+    isDarkMode: false,
+  },
+  auth: {
+    isAuthenticated: true,
+    user: { id: 1, name: 'Test User' },
+  },
+};
+
+const renderWithProviders = (ui, { preloadedState = mockState, store = createStore(rootReducer, preloadedState), ...renderOptions } = {}) => {
+  const Wrapper = ({ children }) => (
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/portfolio/1']}>
+        <Routes>
+          <Route path="/portfolio/:id" element={children} />
+        </Routes>
+      </MemoryRouter>
+    </Provider>
+  );
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
+
+// Mock the fetch function globally
+global.fetch = vi.fn();
+
+describe('PortfolioDetail Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders the PortfolioDetail components when authenticated', async () => {
+    const mockPortfolioData = [{
+      name: 'Test Portfolio',
+      stocks: [{ stocksymbol: 'AAPL', allocation: 50 }, { stocksymbol: 'TSLA', allocation: 50 }],
+      riskAppetite: 50,
+      profitLoss: 100,
+      capital: 1000,
+      worth: 1100,
+      allocation: { Stocks: '70%', Bonds: '30%' }
+    }];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockPortfolioData
+    });
+
+    renderWithProviders(<PortfolioDetail />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('Stocks in Test Portfolio')).toBeInTheDocument();
+    expect(screen.getByText('AAPL')).toBeInTheDocument();
+    expect(screen.getByText('TSLA')).toBeInTheDocument();
+  });
+
+  it('displays AuthError component when not authenticated', () => {
+    const unauthenticatedState = {
+      ...mockState,
+      auth: {
+        isAuthenticated: false,
+        user: null,
+      },
+    };
+
+    renderWithProviders(<PortfolioDetail />, { preloadedState: unauthenticatedState });
+
+    expect(screen.getByText(/Please login to view your portfolio/i)).toBeInTheDocument();
+  });
+
+  it('renders correctly in dark mode', async () => {
+    const darkModeState = {
+      ...mockState,
+      theme: {
+        isDarkMode: true,
+      },
+    };
+
+    renderWithProviders(<PortfolioDetail />, { preloadedState: darkModeState });
+
+    expect(document.querySelector('.bg-black')).toBeInTheDocument();
+  });
+
+  it('fetches and displays portfolio data', async () => {
+    const mockPortfolioData = [{
+      name: 'Test Portfolio',
+      stocks: [{ stocksymbol: 'AAPL', allocation: 50 }, { stocksymbol: 'TSLA', allocation: 50 }],
+      riskAppetite: 50,
+      profitLoss: 100,
+      capital: 1000,
+      worth: 1100,
+      allocation: { Stocks: '70%', Bonds: '30%' }
+    }];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockPortfolioData
+    });
+
+    renderWithProviders(<PortfolioDetail />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText('Stocks in Test Portfolio')).toBeInTheDocument();
+    expect(screen.getByText('AAPL')).toBeInTheDocument();
+    expect(screen.getByText('TSLA')).toBeInTheDocument();
+  });
+
+  it('handles modal interaction for rebalancing', async () => {
+    const mockPortfolioData = [{
+      name: 'Test Portfolio',
+      stocks: [{ stocksymbol: 'AAPL', allocation: 50 }, { stocksymbol: 'TSLA', allocation: 50 }],
+      riskAppetite: 50,
+      profitLoss: 100,
+      capital: 1000,
+      worth: 1100,
+      allocation: { Stocks: '70%', Bonds: '30%' }
+    }];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockPortfolioData
+    });
+
+    renderWithProviders(<PortfolioDetail />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText('Rebalance Portfolio'));
+
+    await waitFor(() => expect(screen.getByText(/Accept or Reject Portfolio/i)).toBeInTheDocument());
+  });
+
+  it('navigates to stock details on row click', async () => {
+    const mockPortfolioData = [{
+      name: 'Test Portfolio',
+      stocks: [{ stocksymbol: 'AAPL', allocation: 50 }, { stocksymbol: 'TSLA', allocation: 50 }],
+      riskAppetite: 50,
+      profitLoss: 100,
+      capital: 1000,
+      worth: 1100,
+      allocation: { Stocks: '70%', Bonds: '30%' }
+    }];
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockPortfolioData
+    });
+
+    renderWithProviders(<PortfolioDetail />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText('AAPL'));
+
+    await waitFor(() => expect(screen.getByText('Navigate')).toBeInTheDocument());
+  });
+});
