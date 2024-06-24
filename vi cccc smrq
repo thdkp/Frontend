@@ -1,0 +1,55 @@
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import StockMarquee from './StockMarquee';
+
+describe('StockMarquee Component', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        json: () =>
+          Promise.resolve([
+            { name: 'AAPL', price: 150.0, change: 1.2 },
+            { name: 'GOOGL', price: 2800.5, change: -0.5 },
+            { name: 'AMZN', price: 3400.0, change: 0.8 },
+          ]),
+      })
+    );
+  });
+
+  it('fetches and displays stock data', async () => {
+    render(<StockMarquee />);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledWith(`${import.meta.env?.VITE_BACKEND_URL}/home/stocks`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('AAPL')).toBeInTheDocument();
+      expect(screen.getByText('150.00')).toBeInTheDocument();
+      expect(screen.getByText('▲ 1.2%')).toBeInTheDocument();
+
+      expect(screen.getByText('GOOGL')).toBeInTheDocument();
+      expect(screen.getByText('2800.50')).toBeInTheDocument();
+      expect(screen.getByText('▼ -0.5%')).toBeInTheDocument();
+
+      expect(screen.getByText('AMZN')).toBeInTheDocument();
+      expect(screen.getByText('3400.00')).toBeInTheDocument();
+      expect(screen.getByText('▲ 0.8%')).toBeInTheDocument();
+    });
+  });
+
+  it('handles fetch error', async () => {
+    global.fetch.mockImplementationOnce(() => Promise.reject('API is down'));
+
+    render(<StockMarquee />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('AAPL')).not.toBeInTheDocument();
+      expect(screen.queryByText('GOOGL')).not.toBeInTheDocument();
+      expect(screen.queryByText('AMZN')).not.toBeInTheDocument();
+    });
+  });
+});
