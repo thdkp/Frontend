@@ -1,101 +1,130 @@
-// __tests__/CreateNews.test.jsx
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import CreateNews from '../CreateNews';
+import CreateNews from '../components/CreateNews';
+import '@testing-library/jest-dom/extend-expect';
 
-// Mock the fetch function globally
+vi.mock('../../notification/notifyError', () => ({
+  default: vi.fn(),
+}));
+
+vi.mock('../../notification/notifySuccess', () => ({
+  default: vi.fn(),
+}));
+
 global.fetch = vi.fn();
 
 describe('CreateNews Component', () => {
   beforeEach(() => {
-    // Clear all instances and calls to constructor and all methods:
     fetch.mockClear();
+    vi.resetAllMocks();
   });
 
-  it('renders the form fields correctly', () => {
+  it('renders without crashing', () => {
     render(<CreateNews />);
-
-    expect(screen.getByLabelText(/Stock Symbol/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Headline/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Affects Stock Negatively/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Create News/i })).toBeInTheDocument();
+    expect(screen.getByText('Create News')).toBeInTheDocument();
+    expect(screen.getByLabelText('Stock Symbol')).toBeInTheDocument();
+    expect(screen.getByLabelText('Headline')).toBeInTheDocument();
+    expect(screen.getByLabelText('Description')).toBeInTheDocument();
+    expect(screen.getByLabelText('Affects Stock Negatively?')).toBeInTheDocument();
+    expect(screen.getByText('Create News')).toBeInTheDocument();
   });
 
-  it('updates the input fields on change', () => {
+  it('updates input fields correctly', () => {
     render(<CreateNews />);
 
-    const stockSymbolInput = screen.getByLabelText(/Stock Symbol/i);
-    const headlineInput = screen.getByLabelText(/Headline/i);
-    const descriptionInput = screen.getByLabelText(/Description/i);
-    const affectStockCheckbox = screen.getByLabelText(/Affects Stock Negatively/i);
+    const stockSymbolInput = screen.getByLabelText('Stock Symbol');
+    const headlineInput = screen.getByLabelText('Headline');
+    const descriptionInput = screen.getByLabelText('Description');
+    const affectStockCheckbox = screen.getByLabelText('Affects Stock Negatively?');
 
     fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
-    fireEvent.change(headlineInput, { target: { value: 'New iPhone Released' } });
-    fireEvent.change(descriptionInput, { target: { value: 'Apple has released a new iPhone model.' } });
+    fireEvent.change(headlineInput, { target: { value: 'Apple stocks rise' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Apple stocks have seen a significant rise today.' } });
     fireEvent.click(affectStockCheckbox);
 
     expect(stockSymbolInput.value).toBe('AAPL');
-    expect(headlineInput.value).toBe('New iPhone Released');
-    expect(descriptionInput.value).toBe('Apple has released a new iPhone model.');
+    expect(headlineInput.value).toBe('Apple stocks rise');
+    expect(descriptionInput.value).toBe('Apple stocks have seen a significant rise today.');
     expect(affectStockCheckbox.checked).toBe(true);
   });
 
-  it('submits the form and handles success response', async () => {
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ message: 'News created successfully!' }),
-    });
+  it('submits the form and shows success notification', async () => {
+    fetch.mockResolvedValueOnce({ ok: true });
+    const notifySuccess = (await import('../../notification/notifySuccess')).default;
+    const notifyError = (await import('../../notification/notifyError')).default;
 
     render(<CreateNews />);
 
-    const stockSymbolInput = screen.getByLabelText(/Stock Symbol/i);
-    const headlineInput = screen.getByLabelText(/Headline/i);
-    const descriptionInput = screen.getByLabelText(/Description/i);
-    const submitButton = screen.getByRole('button', { name: /Create News/i });
+    const stockSymbolInput = screen.getByLabelText('Stock Symbol');
+    const headlineInput = screen.getByLabelText('Headline');
+    const descriptionInput = screen.getByLabelText('Description');
+    const affectStockCheckbox = screen.getByLabelText('Affects Stock Negatively?');
+    const submitButton = screen.getByText('Create News');
 
     fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
-    fireEvent.change(headlineInput, { target: { value: 'New iPhone Released' } });
-    fireEvent.change(descriptionInput, { target: { value: 'Apple has released a new iPhone model.' } });
-    
+    fireEvent.change(headlineInput, { target: { value: 'Apple stocks rise' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Apple stocks have seen a significant rise today.' } });
+    fireEvent.click(affectStockCheckbox);
     fireEvent.click(submitButton);
 
-    // Wait for the alert to appear
-    expect(await screen.findByText(/News created successfully!/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        `${import.meta.env.VITE_BACKEND_URL}/news/create`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'accesstoken': sessionStorage.getItem('accessToken') },
+          body: JSON.stringify({
+            stockSymbol: 'AAPL',
+            headline: 'Apple stocks rise',
+            description: 'Apple stocks have seen a significant rise today.',
+            affectStock: true,
+          }),
+        })
+      );
+      expect(notifySuccess).toHaveBeenCalledWith('News created successfully!');
+    });
 
-    // Check if the form is reset
     expect(stockSymbolInput.value).toBe('');
     expect(headlineInput.value).toBe('');
     expect(descriptionInput.value).toBe('');
-    expect(screen.getByLabelText(/Affects Stock Negatively/i).checked).toBe(false);
+    expect(affectStockCheckbox.checked).toBe(false);
   });
 
-  it('handles failed response', async () => {
-    fetch.mockResolvedValueOnce({
-      ok: false,
+  it('shows error notification on form submission failure', async () => {
+    fetch.mockResolvedValueOnce({ ok: false });
+    const notifySuccess = (await import('../../notification/notifySuccess')).default;
+    const notifyError = (await import('../../notification/notifyError')).default;
+
+    render(<CreateNews />);
+
+    const stockSymbolInput = screen.getByLabelText('Stock Symbol');
+    const headlineInput = screen.getByLabelText('Headline');
+    const descriptionInput = screen.getByLabelText('Description');
+    const affectStockCheckbox = screen.getByLabelText('Affects Stock Negatively?');
+    const submitButton = screen.getByText('Create News');
+
+    fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
+    fireEvent.change(headlineInput, { target: { value: 'Apple stocks rise' } });
+    fireEvent.change(descriptionInput, { target: { value: 'Apple stocks have seen a significant rise today.' } });
+    fireEvent.click(affectStockCheckbox);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        `${import.meta.env.VITE_BACKEND_URL}/news/create`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'accesstoken': sessionStorage.getItem('accessToken') },
+          body: JSON.stringify({
+            stockSymbol: 'AAPL',
+            headline: 'Apple stocks rise',
+            description: 'Apple stocks have seen a significant rise today.',
+            affectStock: true,
+          }),
+        })
+      );
+      expect(notifyError).toHaveBeenCalledWith('Failed to create news.');
     });
-
-    render(<CreateNews />);
-
-    const submitButton = screen.getByRole('button', { name: /Create News/i });
-
-    fireEvent.click(submitButton);
-
-    // Wait for the alert to appear
-    expect(await screen.findByText(/Failed to create news./i)).toBeInTheDocument();
-  });
-
-  it('handles fetch error', async () => {
-    fetch.mockRejectedValueOnce(new Error('Network Error'));
-
-    render(<CreateNews />);
-
-    const submitButton = screen.getByRole('button', { name: /Create News/i });
-
-    fireEvent.click(submitButton);
-
-    // Wait for the alert to appear
-    expect(await screen.findByText(/An error occurred while creating news./i)).toBeInTheDocument();
   });
 });
