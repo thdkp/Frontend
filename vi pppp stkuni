@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import StockUniverse from '../components/StockUniverse';
 import themeReducer from '../redux/slices/themeSlice';
 
@@ -50,11 +50,11 @@ describe('StockUniverse Component', () => {
     );
 
     // Check if the component renders with the dummy data initially
-    expect(screen.getByText('Apple Inc.')).toBeTruthy();
-    expect(screen.getByText('Microsoft Corp.')).toBeTruthy();
-    expect(screen.getByText('Amazon.com Inc.')).toBeTruthy();
-    expect(screen.getByText('Google LLC')).toBeTruthy();
-    expect(screen.getByText('Facebook Inc.')).toBeTruthy();
+    expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+    expect(screen.getByText('Microsoft Corp.')).toBeInTheDocument();
+    expect(screen.getByText('Amazon.com Inc.')).toBeInTheDocument();
+    expect(screen.getByText('Google LLC')).toBeInTheDocument();
+    expect(screen.getByText('Facebook Inc.')).toBeInTheDocument();
 
     // Wait for the fetch to complete and update the state
     await waitFor(() => {
@@ -62,11 +62,11 @@ describe('StockUniverse Component', () => {
     });
 
     // Check if the data from the fetch is rendered
-    expect(screen.getByText('AAPL')).toBeTruthy();
-    expect(screen.getByText('MSFT')).toBeTruthy();
-    expect(screen.getByText('AMZN')).toBeTruthy();
-    expect(screen.getByText('GOOGL')).toBeTruthy();
-    expect(screen.getByText('FB')).toBeTruthy();
+    expect(screen.getByText('AAPL')).toBeInTheDocument();
+    expect(screen.getByText('MSFT')).toBeInTheDocument();
+    expect(screen.getByText('AMZN')).toBeInTheDocument();
+    expect(screen.getByText('GOOGL')).toBeInTheDocument();
+    expect(screen.getByText('FB')).toBeInTheDocument();
   });
 
   it('renders with dark mode', () => {
@@ -108,16 +108,20 @@ describe('StockUniverse Component', () => {
     fireEvent.change(searchInput, { target: { value: 'Apple' } });
 
     // Check if the filtered data is displayed
-    expect(screen.getByText('Apple Inc.')).toBeTruthy();
+    expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
     expect(screen.queryByText('Microsoft Corp.')).toBeNull();
   });
 
   it('navigates to stock details on row click', async () => {
     const mockNavigate = vi.fn();
-    vi.mock('react-router-dom', () => ({
-      ...require.requireActual('react-router-dom'),
-      useNavigate: () => mockNavigate,
-    }));
+
+    vi.mock('react-router-dom', async () => {
+      const actual = await vi.importActual('react-router-dom');
+      return {
+        ...actual,
+        useNavigate: () => mockNavigate,
+      };
+    });
 
     render(
       <Provider store={mockStore}>
