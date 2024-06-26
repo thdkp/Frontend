@@ -2,7 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import CreateNews from '../components/CreateNews';
-import '@testing-library/jest-dom/extend-expect';
+import notifyError from '../../notification/notifyError';
+import notifySuccess from '../../notification/notifySuccess';
 
 vi.mock('../../notification/notifyError', () => ({
   default: vi.fn(),
@@ -22,12 +23,12 @@ describe('CreateNews Component', () => {
 
   it('renders without crashing', () => {
     render(<CreateNews />);
-    expect(screen.getByText('Create News')).toBeInTheDocument();
-    expect(screen.getByLabelText('Stock Symbol')).toBeInTheDocument();
-    expect(screen.getByLabelText('Headline')).toBeInTheDocument();
-    expect(screen.getByLabelText('Description')).toBeInTheDocument();
-    expect(screen.getByLabelText('Affects Stock Negatively?')).toBeInTheDocument();
-    expect(screen.getByText('Create News')).toBeInTheDocument();
+    expect(screen.getByText('Create News')).toBeTruthy();
+    expect(screen.getByLabelText('Stock Symbol')).toBeTruthy();
+    expect(screen.getByLabelText('Headline')).toBeTruthy();
+    expect(screen.getByLabelText('Description')).toBeTruthy();
+    expect(screen.getByLabelText('Affects Stock Negatively?')).toBeTruthy();
+    expect(screen.getByText('Create News')).toBeTruthy();
   });
 
   it('updates input fields correctly', () => {
@@ -51,8 +52,6 @@ describe('CreateNews Component', () => {
 
   it('submits the form and shows success notification', async () => {
     fetch.mockResolvedValueOnce({ ok: true });
-    const notifySuccess = (await import('../../notification/notifySuccess')).default;
-    const notifyError = (await import('../../notification/notifyError')).default;
 
     render(<CreateNews />);
 
@@ -93,8 +92,6 @@ describe('CreateNews Component', () => {
 
   it('shows error notification on form submission failure', async () => {
     fetch.mockResolvedValueOnce({ ok: false });
-    const notifySuccess = (await import('../../notification/notifySuccess')).default;
-    const notifyError = (await import('../../notification/notifyError')).default;
 
     render(<CreateNews />);
 
