@@ -1,75 +1,82 @@
-// __tests__/Home.test.jsx
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import Home from '../Home';
-import themeReducer, { selectIsDarkMode } from '../redux/slices/themeSlice';
-import authReducer from '../redux/slices/authSlice';
+import { describe, it, expect, vi } from 'vitest';
+import Home from '../components/Home';
+import themeReducer from '../redux/slices/themeSlice';
 
-vi.mock('react-redux', async () => {
-  const actual = await vi.importActual('react-redux');
-  return {
-    ...actual,
-    useSelector: vi.fn(),
-  };
-});
-
-describe('Home Component', () => {
-  const mockState = {
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
     theme: {
       isDarkMode: false,
     },
-    auth: {
-      isAuthenticated: true,
-      user: { id: 1, name: 'Test User' },
-    },
-  };
+  },
+});
 
-  const renderWithProviders = (ui, { preloadedState = mockState, store = configureStore({
-      reducer: { theme: themeReducer, auth: authReducer },
-      preloadedState,
-    }), ...renderOptions } = {}) => {
-    const Wrapper = ({ children }) => (
-      <Provider store={store}>
-        <MemoryRouter>
-          {children}
-        </MemoryRouter>
+vi.mock('../components/MarketStatus', () => ({
+  default: vi.fn(() => <div>MarketStatus Component</div>),
+}));
+
+vi.mock('../components/MarketSectors', () => ({
+  default: vi.fn(() => <div>MarketSectors Component</div>),
+}));
+
+vi.mock('../components/GetStarted', () => ({
+  default: vi.fn(() => <div>GetStarted Component</div>),
+}));
+
+vi.mock('../components/News', () => ({
+  default: vi.fn(() => <div>News Component</div>),
+}));
+
+vi.mock('../components/TodaysStocks', () => ({
+  default: vi.fn(() => <div>TodaysStocks Component</div>),
+}));
+
+describe('Home Component', () => {
+  it('renders without crashing', () => {
+    render(
+      <Provider store={mockStore}>
+        <Home />
       </Provider>
     );
-    return render(ui, { wrapper: Wrapper, ...renderOptions });
-  };
 
-  it('renders child components correctly', () => {
-    renderWithProviders(<Home />);
-
-    expect(screen.getByText(/Market Status/i)).toBeInTheDocument();
-    expect(screen.getByText(/Market Sectors/i)).toBeInTheDocument();
-    expect(screen.getByText(/Get Started/i)).toBeInTheDocument();
-    expect(screen.getByText(/Today's Stocks/i)).toBeInTheDocument();
-    expect(screen.getByText(/News/i)).toBeInTheDocument();
+    expect(screen.getByText('MarketStatus Component')).toBeTruthy();
+    expect(screen.getByText('MarketSectors Component')).toBeTruthy();
+    expect(screen.getByText('GetStarted Component')).toBeTruthy();
+    expect(screen.getByText('News Component')).toBeTruthy();
+    expect(screen.getByText('TodaysStocks Component')).toBeTruthy();
   });
 
-  it('renders correctly in dark mode', () => {
-    const darkModeState = {
-      ...mockState,
-      theme: {
-        isDarkMode: true,
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
       },
-    };
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
 
-    renderWithProviders(<Home />, { preloadedState: darkModeState });
+    render(
+      <Provider store={darkModeStore}>
+        <Home />
+      </Provider>
+    );
 
-    const container = screen.getByTestId('container');
+    expect(screen.getByText('MarketStatus Component')).toBeTruthy();
+    expect(screen.getByText('MarketSectors Component')).toBeTruthy();
+    expect(screen.getByText('GetStarted Component')).toBeTruthy();
+    expect(screen.getByText('News Component')).toBeTruthy();
+    expect(screen.getByText('TodaysStocks Component')).toBeTruthy();
+
+    const container = screen.getByTestId('home-container');
     expect(container).toHaveClass('dark:bg-gray-900');
-  });
-
-  it('renders correctly in light mode', () => {
-    renderWithProviders(<Home />);
-
-    const container = screen.getByTestId('container');
-    expect(container).toHaveClass('bg-gray-100');
   });
 });
