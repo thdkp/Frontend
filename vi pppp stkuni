@@ -1,0 +1,141 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import StockUniverse from '../components/StockUniverse';
+import themeReducer from '../redux/slices/themeSlice';
+
+// Mock data for the fetch API
+const mockStockData = [
+  { stockname: 'Apple Inc.', stocksymbol: 'AAPL', value: 145.09 },
+  { stockname: 'Microsoft Corp.', stocksymbol: 'MSFT', value: 299.79 },
+  { stockname: 'Amazon.com Inc.', stocksymbol: 'AMZN', value: 3478.05 },
+  { stockname: 'Google LLC', stocksymbol: 'GOOGL', value: 2729.89 },
+  { stockname: 'Facebook Inc.', stocksymbol: 'FB', value: 355.64 },
+];
+
+// Mock Redux store
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+// Mock fetch API
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve(mockStockData),
+  })
+);
+
+describe('StockUniverse Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders without crashing', async () => {
+    render(
+      <Provider store={mockStore}>
+        <Router>
+          <StockUniverse />
+        </Router>
+      </Provider>
+    );
+
+    // Check if the component renders with the dummy data initially
+    expect(screen.getByText('Apple Inc.')).toBeTruthy();
+    expect(screen.getByText('Microsoft Corp.')).toBeTruthy();
+    expect(screen.getByText('Amazon.com Inc.')).toBeTruthy();
+    expect(screen.getByText('Google LLC')).toBeTruthy();
+    expect(screen.getByText('Facebook Inc.')).toBeTruthy();
+
+    // Wait for the fetch to complete and update the state
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    // Check if the data from the fetch is rendered
+    expect(screen.getByText('AAPL')).toBeTruthy();
+    expect(screen.getByText('MSFT')).toBeTruthy();
+    expect(screen.getByText('AMZN')).toBeTruthy();
+    expect(screen.getByText('GOOGL')).toBeTruthy();
+    expect(screen.getByText('FB')).toBeTruthy();
+  });
+
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <Router>
+          <StockUniverse />
+        </Router>
+      </Provider>
+    );
+
+    const container = screen.getByTestId('stock-universe-container');
+    expect(container).toHaveClass('bg-black');
+  });
+
+  it('handles global search filter', async () => {
+    render(
+      <Provider store={mockStore}>
+        <Router>
+          <StockUniverse />
+        </Router>
+      </Provider>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Search stocks...');
+
+    // Type into the search input
+    fireEvent.change(searchInput, { target: { value: 'Apple' } });
+
+    // Check if the filtered data is displayed
+    expect(screen.getByText('Apple Inc.')).toBeTruthy();
+    expect(screen.queryByText('Microsoft Corp.')).toBeNull();
+  });
+
+  it('navigates to stock details on row click', async () => {
+    const mockNavigate = vi.fn();
+    vi.mock('react-router-dom', () => ({
+      ...require.requireActual('react-router-dom'),
+      useNavigate: () => mockNavigate,
+    }));
+
+    render(
+      <Provider store={mockStore}>
+        <Router>
+          <StockUniverse />
+        </Router>
+      </Provider>
+    );
+
+    // Wait for the fetch to complete and update the state
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    // Click on a row
+    fireEvent.click(screen.getByText('AAPL'));
+
+    // Check if the navigation was called with the correct argument
+    expect(mockNavigate).toHaveBeenCalledWith('/stockdetails/AAPL');
+  });
+});
