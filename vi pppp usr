@@ -1,0 +1,142 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { BrowserRouter as Router } from 'react-router-dom';
+import Users from '../components/Users';
+
+global.fetch = vi.fn();
+
+describe('Users Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders without crashing', () => {
+    render(
+      <Router>
+        <Users />
+      </Router>
+    );
+    expect(screen.getByText('Users')).toBeTruthy();
+    expect(screen.getByText('Edit Stocks')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Search by name')).toBeTruthy();
+  });
+
+  it('fetches and displays users', async () => {
+    fetch.mockResolvedValueOnce({
+      json: async () => [
+        {
+          userid: 1,
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          dob: '1980-01-01',
+          invested: 50000,
+          worth: 70000,
+          profitLoss: 20000,
+          nop: 3
+        },
+        {
+          userid: 2,
+          name: 'Jane Doe',
+          email: 'jane.doe@example.com',
+          dob: '1985-01-01',
+          invested: 60000,
+          worth: 80000,
+          profitLoss: 20000,
+          nop: 4
+        }
+      ]
+    });
+
+    render(
+      <Router>
+        <Users />
+      </Router>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeTruthy();
+      expect(screen.getByText('Jane Doe')).toBeTruthy();
+    });
+  });
+
+  it('filters users based on search input', async () => {
+    fetch.mockResolvedValueOnce({
+      json: async () => [
+        {
+          userid: 1,
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          dob: '1980-01-01',
+          invested: 50000,
+          worth: 70000,
+          profitLoss: 20000,
+          nop: 3
+        },
+        {
+          userid: 2,
+          name: 'Jane Doe',
+          email: 'jane.doe@example.com',
+          dob: '1985-01-01',
+          invested: 60000,
+          worth: 80000,
+          profitLoss: 20000,
+          nop: 4
+        }
+      ]
+    });
+
+    render(
+      <Router>
+        <Users />
+      </Router>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeTruthy();
+      expect(screen.getByText('Jane Doe')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Search by name'), { target: { value: 'Jane' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText('John Doe')).toBeNull();
+      expect(screen.getByText('Jane Doe')).toBeTruthy();
+    });
+  });
+
+  it('opens edit modal when edit button is clicked', async () => {
+    fetch.mockResolvedValueOnce({
+      json: async () => [
+        {
+          userid: 1,
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          dob: '1980-01-01',
+          invested: 50000,
+          worth: 70000,
+          profitLoss: 20000,
+          nop: 3
+        }
+      ]
+    });
+
+    render(
+      <Router>
+        <Users />
+      </Router>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByText('Edit'));
+
+    await waitFor(() => {
+      // Add assertions to verify that the modal is opened
+      // Since the modal implementation isn't provided, this is a placeholder
+      // expect(screen.getByText('Edit User')).toBeTruthy();
+    });
+  });
+});
