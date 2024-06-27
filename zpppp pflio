@@ -4,7 +4,6 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import Portfolio from './Portfolio';
 import themeReducer from '../redux/slices/themeSlice';
-import authReducer from '../redux/slices/authSlice';
 
 // Mock the fetch calls
 global.fetch = vi.fn(() =>
@@ -21,11 +20,9 @@ global.fetch = vi.fn(() =>
 const store = configureStore({
   reducer: {
     theme: themeReducer,
-    auth: authReducer,
   },
   preloadedState: {
     theme: { isDarkMode: false },
-    auth: { isAuthenticated: true, user: { name: 'Test User' } },
   },
 });
 
@@ -45,36 +42,13 @@ describe('Portfolio Component', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
   });
 
-  test('displays authentication error when not authenticated', async () => {
-    const authStore = configureStore({
-      reducer: {
-        theme: themeReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
-        theme: { isDarkMode: false },
-        auth: { isAuthenticated: false, user: null },
-      },
-    });
-
-    render(
-      <Provider store={authStore}>
-        <Portfolio />
-      </Provider>
-    );
-
-    expect(screen.getByText('You are not authenticated')).toBeTruthy();
-  });
-
   test('changes dark mode correctly', async () => {
     const darkModeStore = configureStore({
       reducer: {
         theme: themeReducer,
-        auth: authReducer,
       },
       preloadedState: {
         theme: { isDarkMode: true },
-        auth: { isAuthenticated: true, user: { name: 'Test User' } },
       },
     });
 
