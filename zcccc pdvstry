@@ -1,0 +1,82 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import PortfolioDiversity from './PortfolioDiversity';
+import themeReducer from '../redux/slices/themeSlice';
+
+// Mock the components
+vi.mock('./AllocationView', () => ({
+  __esModule: true,
+  default: ({ data }) => <div>AllocationView - Data Length: {data?.length}</div>,
+}));
+
+vi.mock('../utils/AuthError', () => ({
+  __esModule: true,
+  default: () => <div>AuthError</div>,
+}));
+
+// Mock the redux store with only themeReducer
+const store = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: { isDarkMode: false },
+  },
+});
+
+describe('PortfolioDiversity Component', () => {
+  test('renders without crashing and displays AllocationView', () => {
+    const portfolio = { allocation: [1, 2, 3] };
+
+    render(
+      <Provider store={store}>
+        <PortfolioDiversity portfolio={portfolio} />
+      </Provider>
+    );
+
+    expect(screen.getByText('AllocationView - Data Length: 3')).toBeInTheDocument();
+  });
+
+  test('displays AuthError when not authenticated', () => {
+    const unauthenticatedStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: { isDarkMode: false },
+      },
+    });
+
+    render(
+      <Provider store={unauthenticatedStore}>
+        <PortfolioDiversity portfolio={{}} />
+      </Provider>
+    );
+
+    expect(screen.getByText('AuthError')).toBeInTheDocument();
+  });
+
+  test('applies dark mode classes correctly', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: { isDarkMode: true },
+      },
+    });
+
+    const portfolio = { allocation: [1, 2, 3] };
+
+    render(
+      <Provider store={darkModeStore}>
+        <PortfolioDiversity portfolio={portfolio} />
+      </Provider>
+    );
+
+    const containerDiv = screen.getByText('AllocationView - Data Length: 3').closest('div');
+    expect(containerDiv).toHaveClass('bg gray 800');
+  });
+});
