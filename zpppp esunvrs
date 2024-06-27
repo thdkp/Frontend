@@ -1,0 +1,167 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import EditStockUniverse from '../components/EditStockUniverse';
+import themeReducer from '../redux/slices/themeSlice';
+
+// Mock Redux store
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+// Mock fetch API
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { stockname: 'Apple Inc.', stocksymbol: 'AAPL', sector: 'Technology', eps: 5.0, pe: 25.0, roe: 15.0 },
+      { stockname: 'Microsoft Corp.', stocksymbol: 'MSFT', sector: 'Technology', eps: 4.5, pe: 30.0, roe: 18.0 }
+    ]),
+  })
+);
+
+describe('EditStockUniverse Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders without crashing and fetches stock data', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/stocks']}>
+          <Routes>
+            <Route path="/admin/stocks" element={<EditStockUniverse />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Check if the component renders with the table and fetches stock data
+    expect(screen.getByText('Universe of Stocks')).toBeTruthy();
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  });
+
+  it('handles global filtering', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/stocks']}>
+          <Routes>
+            <Route path="/admin/stocks" element={<EditStockUniverse />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate typing into the global filter
+    fireEvent.change(screen.getByPlaceholderText('Search stocks...'), { target: { value: 'Microsoft' } });
+
+    // Check if the filter is applied
+    await waitFor(() => expect(screen.queryByText('Apple Inc.')).toBeNull());
+    expect(screen.getByText('Microsoft Corp.')).toBeTruthy();
+  });
+
+  it('handles sorting', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/stocks']}>
+          <Routes>
+            <Route path="/admin/stocks" element={<EditStockUniverse />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking on the 'EPS' column header to sort
+    fireEvent.click(screen.getByText('EPS'));
+
+    // Check if the sorting is applied
+    const rows = screen.getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('Microsoft Corp.');
+    expect(rows[2]).toHaveTextContent('Apple Inc.');
+  });
+
+  it('handles pagination', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/stocks']}>
+          <Routes>
+            <Route path="/admin/stocks" element={<EditStockUniverse />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Check if pagination buttons are rendered
+    expect(screen.getByText('Previous')).toBeTruthy();
+    expect(screen.getByText('Next')).toBeTruthy();
+
+    // Simulate clicking the next page button
+    fireEvent.click(screen.getByText('Next'));
+
+    // Check if the next page is shown
+    await waitFor(() => expect(screen.getByText('Microsoft Corp.')).toBeTruthy());
+  });
+
+  it('handles edit button click and opens modal', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/stocks']}>
+          <Routes>
+            <Route path="/admin/stocks" element={<EditStockUniverse />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking the edit button
+    fireEvent.click(screen.getAllByText('Edit')[0]);
+
+    // Check if the modal opens
+    expect(screen.getByText('Edit Stock')).toBeTruthy();
+    expect(screen.getByDisplayValue('Apple Inc.')).toBeTruthy();
+  });
+
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <MemoryRouter initialEntries={['/admin/stocks']}>
+          <Routes>
+            <Route path="/admin/stocks" element={<EditStockUniverse />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    const container = screen.getByTestId('stock-universe-container');
+    expect(container).toHaveClass('bg-gray-800');
+  });
+});
