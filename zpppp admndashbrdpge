@@ -1,0 +1,156 @@
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import AdminDashboard from './AdminDashboard';
+import themeReducer, { selectIsDarkMode } from '../../redux/slices/themeSlice';
+import authReducer from '../../redux/slices/authSlice';
+import { BrowserRouter } from 'react-router-dom';
+
+// Mock the fetch calls
+global.fetch = vi.fn((url) => {
+  if (url.includes('/admin/home')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({
+        noUsers: 100,
+        noPortfolios: 50,
+        totalInvested: 1000000,
+        totalWorth: 1500000,
+        netPL: 500000,
+        investmentDist: {
+          technology: 20,
+          healthCare: 15,
+          financialServices: 10,
+          consumerCyclical: 8,
+          communicationServices: 12,
+          industrials: 5,
+          consumerDefensive: 7,
+          energy: 10,
+          utilities: 4,
+          realEstate: 6,
+          basicMaterials: 3,
+        }
+      }),
+    });
+  } else if (url.includes('/admin/history')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve([
+        { date: '2023-01-01', value: 1000000 },
+        { date: '2023-02-01', value: 1100000 },
+        { date: '2023-03-01', value: 1200000 },
+        { date: '2023-04-01', value: 1300000 },
+        { date: '2023-05-01', value: 1400000 },
+      ]),
+    });
+  }
+});
+
+// Mock the redux store
+const store = configureStore({
+  reducer: {
+    theme: themeReducer,
+    auth: authReducer,
+  },
+  preloadedState: {
+    theme: { isDarkMode: false },
+    auth: { isAuthenticated: true, user: { name: 'Test User' } },
+  },
+});
+
+describe('AdminDashboard Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  test('renders without crashing and displays data correctly', async () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <AdminDashboard />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Total Users')).toBeInTheDocument();
+      expect(screen.getByText('100')).toBeInTheDocument();
+      expect(screen.getByText('Total Portfolios')).toBeInTheDocument();
+      expect(screen.getByText('50')).toBeInTheDocument();
+      expect(screen.getByText('Total Amount Invested')).toBeInTheDocument();
+      expect(screen.getByText('1000000')).toBeInTheDocument();
+      expect(screen.getByText('Total Worth')).toBeInTheDocument();
+      expect(screen.getByText('1500000')).toBeInTheDocument();
+      expect(screen.getByText('Profit/Loss')).toBeInTheDocument();
+      expect(screen.getByText('500000')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  test('displays line chart data correctly', async () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <AdminDashboard />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Portfolio Worth Over Time')).toBeInTheDocument();
+    });
+
+    const canvasElements = screen.getAllByRole('img', { hidden: true });
+    expect(canvasElements.length).toBe(2); // Line chart and Pie chart
+  });
+
+  test('displays pie chart data correctly', async () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <AdminDashboard />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Investment Distribution')).toBeInTheDocument();
+    });
+
+    const canvasElements = screen.getAllByRole('img', { hidden: true });
+    expect(canvasElements.length).toBe(2); // Line chart and Pie chart
+  });
+
+  test('changes dark mode correctly', async () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+        auth: authReducer,
+      },
+      preloadedState: {
+        theme: { isDarkMode: true },
+        auth: { isAuthenticated: true, user: { name: 'Test User' } },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <BrowserRouter>
+          <AdminDashboard />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Total Users')).toHaveClass('text-white');
+      expect(screen.getByText('Total Portfolios')).toHaveClass('text-white');
+      expect(screen.getByText('Total Amount Invested')).toHaveClass('text-white');
+      expect(screen.getByText('Total Worth')).toHaveClass('text-white');
+      expect(screen.getByText('Profit/Loss')).toHaveClass('text-white');
+    });
+  });
+});
