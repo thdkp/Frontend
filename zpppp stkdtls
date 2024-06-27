@@ -1,0 +1,108 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import StockDetails from '../components/StockDetails';
+import themeReducer from '../redux/slices/themeSlice';
+
+// Mock Redux store
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+// Mock useParams
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useParams: () => ({ stocksymbol: 'AAPL' }),
+  };
+});
+
+// Mock fetch API
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(dummyStockDetails),
+  })
+);
+
+describe('StockDetails Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders without crashing and fetches stock details', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/stocks/AAPL']}>
+          <Routes>
+            <Route path="/stocks/:stocksymbol" element={<StockDetails />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Check if the component renders with the stock name and fetches stock details
+    expect(screen.getByText('Loading...')).toBeTruthy();
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('Apple Inc. (AAPL)')).toBeTruthy();
+    expect(screen.getByText('Current Price: $145.09')).toBeTruthy();
+  });
+
+  it('handles time range button clicks', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/stocks/AAPL']}>
+          <Routes>
+            <Route path="/stocks/:stocksymbol" element={<StockDetails />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking the '1 Month' button
+    fireEvent.click(screen.getByText('1 Month'));
+
+    // Check if the time range is updated
+    expect(screen.getByText('1 Month')).toHaveClass('bg-blue-500 text-white');
+    expect(screen.getByText('1 Week')).toHaveClass('bg-gray-300 text-gray-800');
+  });
+
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <MemoryRouter initialEntries={['/stocks/AAPL']}>
+          <Routes>
+            <Route path="/stocks/:stocksymbol" element={<StockDetails />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    const container = screen.getByTestId('stock-details-container');
+    expect(container).toHaveClass('bg-gray-800');
+  });
+});
