@@ -1,0 +1,186 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { describe, it, expect, vi } from 'vitest';
+import CreateNews from '../components/CreateNews';
+import themeReducer from '../redux/slices/themeSlice';
+import notifyError from '../redux/slices/notifyError';
+import notifySuccess from '../redux/slices/notifySuccess';
+
+// Mock Redux store
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+// Mock fetch API
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  })
+);
+
+// Mock notification functions
+vi.mock('../redux/slices/notifyError', () => ({
+  default: vi.fn(),
+}));
+vi.mock('../redux/slices/notifySuccess', () => ({
+  default: vi.fn(),
+}));
+
+describe('CreateNews Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+    notifyError.mockClear();
+    notifySuccess.mockClear();
+  });
+
+  it('renders without crashing', () => {
+    render(
+      <Provider store={mockStore}>
+        <CreateNews />
+      </Provider>
+    );
+
+    // Check if the component renders with the form elements
+    expect(screen.getByText('Create News')).toBeTruthy();
+    expect(screen.getByLabelText('Stock Symbol')).toBeTruthy();
+    expect(screen.getByLabelText('Headline')).toBeTruthy();
+    expect(screen.getByLabelText('Description')).toBeTruthy();
+    expect(screen.getByLabelText('Affects Stock Negatively?')).toBeTruthy();
+  });
+
+  it('handles form input changes', () => {
+    render(
+      <Provider store={mockStore}>
+        <CreateNews />
+      </Provider>
+    );
+
+    // Input elements
+    const stockSymbolInput = screen.getByLabelText('Stock Symbol');
+    const headlineInput = screen.getByLabelText('Headline');
+    const descriptionTextarea = screen.getByLabelText('Description');
+    const affectStockCheckbox = screen.getByLabelText('Affects Stock Negatively?');
+
+    // Simulate user input
+    fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
+    fireEvent.change(headlineInput, { target: { value: 'Apple releases new product' } });
+    fireEvent.change(descriptionTextarea, { target: { value: 'Apple has announced a new product that will revolutionize the market.' } });
+    fireEvent.click(affectStockCheckbox);
+
+    // Check if the inputs have the correct values
+    expect(stockSymbolInput.value).toBe('AAPL');
+    expect(headlineInput.value).toBe('Apple releases new product');
+    expect(descriptionTextarea.value).toBe('Apple has announced a new product that will revolutionize the market.');
+    expect(affectStockCheckbox.checked).toBe(true);
+  });
+
+  it('handles form submission and API call', async () => {
+    render(
+      <Provider store={mockStore}>
+        <CreateNews />
+      </Provider>
+    );
+
+    // Input elements
+    const stockSymbolInput = screen.getByLabelText('Stock Symbol');
+    const headlineInput = screen.getByLabelText('Headline');
+    const descriptionTextarea = screen.getByLabelText('Description');
+    const affectStockCheckbox = screen.getByLabelText('Affects Stock Negatively?');
+    const submitButton = screen.getByText('Create News');
+
+    // Simulate user input
+    fireEvent.change(stockSymbolInput, { target: { value: 'AAPL' } });
+    fireEvent.change(headlineInput, { target: { value: 'Apple releases new product' } });
+    fireEvent.change(descriptionTextarea, { target: { value: 'Apple has announced a new product that will revolutionize the market.' } });
+    fireEvent.click(affectStockCheckbox);
+
+    // Simulate form submission
+    fireEvent.click(submitButton);
+
+    // Wait for the fetch call to complete
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    // Check if the API call was made with the correct payload
+    expect(fetch).toHaveBeenCalledWith(
+      `${import.meta.env?.VITE_BACKEND_URL}/news/create`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accesstoken': sessionStorage.getItem('accessToken')
+        },
+        body: JSON.stringify({
+          stockSymbol: 'AAPL',
+          headline: 'Apple releases new product',
+          description: 'Apple has announced a new product that will revolutionize the market.',
+          affectStock: true,
+        }),
+      }
+    );
+
+    // Check if the success notification was called
+    expect(notifySuccess).toHaveBeenCalledWith('News created successfully!');
+  });
+
+  it('handles API call failure', async () => {
+    // Mock fetch to return an error response
+    fetch.mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: false,
+        json: () => Promise.resolve({}),
+      })
+    );
+
+    render(
+      <Provider store={mockStore}>
+        <CreateNews />
+      </Provider>
+    );
+
+    // Simulate form submission
+    const submitButton = screen.getByText('Create News');
+    fireEvent.click(submitButton);
+
+    // Wait for the fetch call to complete
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    // Check if the error notification was called
+    expect(notifyError).toHaveBeenCalledWith('Failed to create news.');
+  });
+
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <CreateNews />
+      </Provider>
+    );
+
+    const container = screen.getByTestId('create-news-container');
+    expect(container).toHaveClass('bg-gray-800');
+  });
+});
