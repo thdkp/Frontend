@@ -1,0 +1,143 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import Users from '../components/Users';
+import themeReducer from '../redux/slices/themeSlice';
+
+// Mock Redux store
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+// Mock fetch API
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { userid: 1, name: 'John Doe', email: 'john.doe@example.com', invested: 50000, worth: 70000, profitLoss: 20000, nop: 3 },
+      { userid: 2, name: 'Jane Doe', email: 'jane.doe@example.com', invested: 60000, worth: 80000, profitLoss: 20000, nop: 4 }
+    ]),
+  })
+);
+
+describe('Users Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
+
+  it('renders without crashing and fetches user data', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/users']}>
+          <Routes>
+            <Route path="/admin/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Check if the component renders with the table and fetches user data
+    expect(screen.getByText('Users')).toBeTruthy();
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  });
+
+  it('handles global filtering', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/users']}>
+          <Routes>
+            <Route path="/admin/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate typing into the global filter
+    fireEvent.change(screen.getByPlaceholderText('Search by name'), { target: { value: 'Jane' } });
+
+    // Check if the filter is applied
+    await waitFor(() => expect(screen.queryByText('John Doe')).toBeNull());
+    expect(screen.getByText('Jane Doe')).toBeTruthy();
+  });
+
+  it('handles sorting', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/users']}>
+          <Routes>
+            <Route path="/admin/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking on the 'Total Worth' column header to sort
+    fireEvent.click(screen.getByText('Total Worth'));
+
+    // Check if the sorting is applied
+    const rows = screen.getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('Jane Doe');
+    expect(rows[2]).toHaveTextContent('John Doe');
+  });
+
+  it('handles edit button click and opens modal', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/users']}>
+          <Routes>
+            <Route path="/admin/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking the edit button
+    fireEvent.click(screen.getAllByText('Edit')[0]);
+
+    // Check if the modal opens
+    expect(screen.getByText('Edit User')).toBeTruthy();
+    expect(screen.getByDisplayValue('John Doe')).toBeTruthy();
+  });
+
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <MemoryRouter initialEntries={['/admin/users']}>
+          <Routes>
+            <Route path="/admin/users" element={<Users />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    const container = screen.getByTestId('users-container');
+    expect(container).toHaveClass('bg-gray-800');
+  });
+});
