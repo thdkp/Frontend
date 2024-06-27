@@ -1,0 +1,149 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import UserDetailPage from '../components/UserDetailPage';
+import themeReducer from '../redux/slices/themeSlice';
+import notifySuccess from '../notifications/notifySuccess';
+
+// Mock Redux store
+const mockStore = configureStore({
+  reducer: {
+    theme: themeReducer,
+  },
+  preloadedState: {
+    theme: {
+      isDarkMode: false,
+    },
+  },
+});
+
+// Mock fetch API
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([]),
+  })
+);
+
+// Mock notification functions
+vi.mock('../notifications/notifySuccess', () => ({
+  default: vi.fn(),
+}));
+
+describe('UserDetailPage Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+    notifySuccess.mockClear();
+  });
+
+  it('renders without crashing and fetches user data', async () => {
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/user/1']}>
+          <Routes>
+            <Route path="/admin/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Check if the component renders with the table and fetches user data
+    expect(screen.getByText('Portfolios')).toBeTruthy();
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  });
+
+  it('handles edit button click and opens modal', async () => {
+    fetch.mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([{ portfolioid: 1, name: 'Portfolio 1', riskappetite: 50, capital: 1000 }]),
+      })
+    );
+
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/user/1']}>
+          <Routes>
+            <Route path="/admin/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking the edit button
+    fireEvent.click(screen.getByText('Edit'));
+
+    // Check if the modal opens
+    expect(screen.getByText('Edit Portfolio')).toBeTruthy();
+    expect(screen.getByDisplayValue('Portfolio 1')).toBeTruthy();
+  });
+
+  it('handles form submission and saves portfolio', async () => {
+    fetch.mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([{ portfolioid: 1, name: 'Portfolio 1', riskappetite: 50, capital: 1000 }]),
+      })
+    );
+
+    render(
+      <Provider store={mockStore}>
+        <MemoryRouter initialEntries={['/admin/user/1']}>
+          <Routes>
+            <Route path="/admin/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    // Simulate clicking the edit button
+    fireEvent.click(screen.getByText('Edit'));
+
+    // Simulate form input changes
+    fireEvent.change(screen.getByDisplayValue('Portfolio 1'), { target: { value: 'Updated Portfolio' } });
+    fireEvent.change(screen.getByDisplayValue('50'), { target: { value: '70' } });
+    fireEvent.change(screen.getByDisplayValue('1000'), { target: { value: '2000' } });
+
+    // Simulate form submission
+    fireEvent.click(screen.getByText('Save'));
+
+    // Wait for the fetch call to complete
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    // Check if the success notification was called
+    expect(notifySuccess).toHaveBeenCalledWith('Updated Successfully');
+  });
+
+  it('renders with dark mode', () => {
+    const darkModeStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+      },
+      preloadedState: {
+        theme: {
+          isDarkMode: true,
+        },
+      },
+    });
+
+    render(
+      <Provider store={darkModeStore}>
+        <MemoryRouter initialEntries={['/admin/user/1']}>
+          <Routes>
+            <Route path="/admin/user/:userId" element={<UserDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+
+    const container = screen.getByTestId('user-detail-container');
+    expect(container).toHaveClass('bg-gray-800');
+  });
+});
