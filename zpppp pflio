@@ -1,9 +1,10 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import Portfolio from './Portfolio';
-import themeReducer from '../redux/slices/themeSlice';
+import themeReducer, { selectIsDarkMode } from '../redux/slices/themeSlice';
+import authReducer from '../redux/slices/authSlice';
+import { vi } from 'vitest';
 
 // Mock the fetch calls
 global.fetch = vi.fn(() =>
@@ -20,9 +21,11 @@ global.fetch = vi.fn(() =>
 const store = configureStore({
   reducer: {
     theme: themeReducer,
+    auth: authReducer,
   },
   preloadedState: {
     theme: { isDarkMode: false },
+    auth: { isAuthenticated: true, user: { name: 'Test User' } },
   },
 });
 
@@ -38,17 +41,41 @@ describe('Portfolio Component', () => {
       </Provider>
     );
 
-    expect(screen.getByText('Portfolio 1')).toBeTruthy();
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+  });
+
+  test('displays authentication error when not authenticated', async () => {
+    const authStore = configureStore({
+      reducer: {
+        theme: themeReducer,
+        auth: authReducer,
+      },
+      preloadedState: {
+        theme: { isDarkMode: false },
+        auth: { isAuthenticated: false, user: null },
+      },
+    });
+
+    render(
+      <Provider store={authStore}>
+        <Portfolio />
+      </Provider>
+    );
+
+    expect(screen.getByText('You are not authenticated')).toBeInTheDocument();
   });
 
   test('changes dark mode correctly', async () => {
     const darkModeStore = configureStore({
       reducer: {
         theme: themeReducer,
+        auth: authReducer,
       },
       preloadedState: {
         theme: { isDarkMode: true },
+        auth: { isAuthenticated: true, user: { name: 'Test User' } },
       },
     });
 
@@ -58,11 +85,11 @@ describe('Portfolio Component', () => {
       </Provider>
     );
 
-    expect(screen.getByText('Portfolio 1')).toBeTruthy();
-    expect(screen.getByText('Portfolio 2')).toBeTruthy();
-    const portfolio1 = screen.getByText('Portfolio 1').closest('div');
-    expect(portfolio1).not.toBeNull();
-    expect(portfolio1.classList.contains('bg-black')).toBe(true);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+    const container = screen.getByText('Portfolio 1').closest('div');
+    expect(container).toHaveClass('bg-black');
   });
 
   test('selects and displays portfolio details', async () => {
@@ -78,8 +105,9 @@ describe('Portfolio Component', () => {
     fireEvent.click(portfolio1);
 
     await waitFor(() => {
-      expect(screen.getByText('Portfolio 1')).toBeTruthy();
-      // Add assertions to check if the portfolio details are displayed
+      const portfolioDetail = screen.getByText('Portfolio 1');
+      expect(portfolioDetail).toBeInTheDocument();
+      // Add additional assertions to check if the portfolio details are displayed as needed
     });
   });
 });
