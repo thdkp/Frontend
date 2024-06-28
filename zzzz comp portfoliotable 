@@ -1,0 +1,130 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { useSelector } from 'react-redux';
+import PortfolioTable from './PortfolioTable';
+import { vi } from 'vitest';
+
+// Mock the Redux selector
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useSelector: vi.fn(),
+}));
+
+// Mock the child components
+vi.mock('../utils/AuthError', () => ({
+  __esModule: true,
+  default: () => <div>Mocked AuthError</div>,
+}));
+
+describe('PortfolioTable', () => {
+  beforeEach(() => {
+    useSelector.mockImplementation(callback => callback({
+      auth: {
+        isAuthenticated: true,
+        user: { name: 'testUser' },
+      },
+      theme: {
+        isDarkMode: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPortfolios = [
+    {
+      portfolioid: '1',
+      name: 'Portfolio 1',
+      profitLoss: 100,
+      capital: 1000,
+      worth: 1100,
+      allocation: { stocks: 50, bonds: 50 },
+    },
+    {
+      portfolioid: '2',
+      name: 'Portfolio 2',
+      profitLoss: -50,
+      capital: 2000,
+      worth: 1950,
+      allocation: { stocks: 60, bonds: 40 },
+    },
+  ];
+
+  const mockOnSelectPortfolio = vi.fn();
+
+  test('renders portfolio table when authenticated', () => {
+    render(<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={mockOnSelectPortfolio} />);
+
+    expect(screen.getByText('Portfolio Table')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio 2')).toBeInTheDocument();
+  });
+
+  test('renders AuthError when not authenticated', () => {
+    useSelector.mockImplementation(callback => callback({
+      auth: {
+        isAuthenticated: false,
+      },
+      theme: {
+        isDarkMode: false,
+      },
+    }));
+
+    render(<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={mockOnSelectPortfolio} />);
+
+    expect(screen.getByText('Mocked AuthError')).toBeInTheDocument();
+  });
+
+  test('filters portfolios based on search query', () => {
+    render(<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={mockOnSelectPortfolio} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Search by name'), { target: { value: '1' } });
+
+    expect(screen.getByText('Portfolio 1')).toBeInTheDocument();
+    expect(screen.queryByText('Portfolio 2')).not.toBeInTheDocument();
+  });
+
+  test('expands and collapses portfolio details', () => {
+    render(<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={mockOnSelectPortfolio} />);
+
+    fireEvent.click(screen.getByText('Portfolio 1'));
+
+    expect(screen.getByText('Summary for Portfolio 1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Portfolio 1'));
+
+    expect(screen.queryByText('Summary for Portfolio 1')).not.toBeInTheDocument();
+  });
+
+  test('applies dark mode styles correctly', () => {
+    useSelector.mockImplementation(callback => callback({
+      auth: {
+        isAuthenticated: true,
+      },
+      theme: {
+        isDarkMode: true,
+      },
+    }));
+
+    const { container } = render(<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={mockOnSelectPortfolio} />);
+
+    expect(container.firstChild).toHaveClass('bg gray 800');
+  });
+
+  test('applies light mode styles correctly', () => {
+    useSelector.mockImplementation(callback => callback({
+      auth: {
+        isAuthenticated: true,
+      },
+      theme: {
+        isDarkMode: false,
+      },
+    }));
+
+    const { container } = render(<PortfolioTable portfolios={mockPortfolios} onSelectPortfolio={mockOnSelectPortfolio} />);
+
+    expect(container.firstChild).toHaveClass('bg white');
+  });
+});
