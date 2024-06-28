@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import configureStore from 'redux-mock-store';
 import AllotedStockTable from './AllotedStockTable';
 import { selectIsDarkMode } from '../../redux/slices/themeSlice';
@@ -11,15 +11,6 @@ import { vi } from 'vitest';
 vi.mock('../../redux/slices/themeSlice', () => ({
   selectIsDarkMode: vi.fn(),
 }));
-
-// Mock the navigate function
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => vi.fn(),
-  };
-});
 
 const mockStore = configureStore([]);
 
@@ -40,9 +31,9 @@ describe('AllotedStockTable', () => {
   test('renders the table headers correctly', () => {
     render(
       <Provider store={store}>
-        <Router>
+        <MemoryRouter>
           <AllotedStockTable stocks={stocks} />
-        </Router>
+        </MemoryRouter>
       </Provider>
     );
 
@@ -54,9 +45,9 @@ describe('AllotedStockTable', () => {
   test('renders the table rows correctly', () => {
     render(
       <Provider store={store}>
-        <Router>
+        <MemoryRouter>
           <AllotedStockTable stocks={stocks} />
-        </Router>
+        </MemoryRouter>
       </Provider>
     );
 
@@ -70,24 +61,18 @@ describe('AllotedStockTable', () => {
   });
 
   test('handles row click navigation', () => {
-    const navigate = vi.fn();
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => navigate,
-      };
-    });
-
     render(
       <Provider store={store}>
-        <Router>
-          <AllotedStockTable stocks={stocks} />
-        </Router>
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route path="/" element={<AllotedStockTable stocks={stocks} />} />
+            <Route path="/stockdetails/:stockSymbol" element={<div>Stock Details</div>} />
+          </Routes>
+        </MemoryRouter>
       </Provider>
     );
 
     fireEvent.click(screen.getByText('AAPL'));
-    expect(navigate).toHaveBeenCalledWith('/stockdetails/AAPL');
+    expect(screen.getByText('Stock Details')).toBeInTheDocument();
   });
 });
