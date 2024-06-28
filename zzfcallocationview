@@ -1,0 +1,92 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
+import configureStore from 'redux-mock-store';
+import AllocationView from './AllocationView';
+import { selectIsDarkMode } from '../../redux/slices/themeSlice';
+import { vi } from 'vitest';
+
+// Mock the necessary redux slice selector
+vi.mock('../../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+}));
+
+const mockStore = configureStore([]);
+
+describe('AllocationView', () => {
+  let store;
+  const data = {
+    technology: 25,
+    healthCare: 10,
+    financialServices: 15,
+    consumerCyclical: 5,
+    communicationServices: 10,
+    industrials: 10,
+    consumerDefensive: 5,
+    energy: 10,
+    utilities: 5,
+    realEstate: 3,
+    basicMaterials: 2,
+  };
+
+  beforeEach(() => {
+    store = mockStore({
+      auth: { isAuthenticated: true },
+      theme: { isDarkMode: false },
+    });
+    selectIsDarkMode.mockReturnValue(false);
+  });
+
+  test('renders the AllocationView component correctly', () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <AllocationView data={data} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText('Allocation View')).toBeInTheDocument();
+    expect(screen.getByText('Technology accounts for 25% of your portfolio.')).toBeInTheDocument();
+  });
+
+  test('renders different chart types when buttons are clicked', () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <AllocationView data={data} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /pie/i }));
+    expect(screen.getByText('Technology accounts for 25% of your portfolio.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /bar/i }));
+    expect(screen.getByText('Technology accounts for 25% of your portfolio.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /radial/i }));
+    expect(screen.getByText('Technology accounts for 25% of your portfolio.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /radar/i }));
+    expect(screen.getByText('Technology accounts for 25% of your portfolio.')).toBeInTheDocument();
+  });
+
+  test('renders AuthError when not authenticated', () => {
+    store = mockStore({
+      auth: { isAuthenticated: false },
+      theme: { isDarkMode: false },
+    });
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <AllocationView data={data} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText('You must be authenticated to view this page.')).toBeInTheDocument();
+  });
+});
