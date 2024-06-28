@@ -1,0 +1,94 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { useSelector } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import AllotedStockTable from './AllotedStockTable';
+import { vi } from 'vitest';
+
+// Mock the Redux selector
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useSelector: vi.fn(),
+}));
+
+// Mock the react-router-dom useNavigate hook
+vi.mock('react-router-dom', () => ({
+  ...vi.importActual('react-router-dom'),
+  useNavigate: vi.fn(),
+}));
+
+const mockNavigate = require('react-router-dom').useNavigate;
+
+describe('AllotedStockTable', () => {
+  const mockStocks = [
+    { stocksymbol: 'AAPL', closingprice: 145.09, allocation: '50%' },
+    { stocksymbol: 'MSFT', closingprice: 299.79, allocation: '30%' },
+    { stocksymbol: 'GOOGL', closingprice: 2729.89, allocation: '20%' },
+  ];
+
+  beforeEach(() => {
+    useSelector.mockImplementation(callback => {
+      return callback({
+        theme: {
+          isDarkMode: false,
+        },
+      });
+    });
+
+    mockNavigate.mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders table with correct headers and data', () => {
+    render(
+      <Router>
+        <AllotedStockTable stocks={mockStocks} />
+      </Router>
+    );
+
+    expect(screen.getByText('Stock Symbol')).toBeInTheDocument();
+    expect(screen.getByText('Stock Price(in $)')).toBeInTheDocument();
+    expect(screen.getByText('Percent Allocation')).toBeInTheDocument();
+
+    mockStocks.forEach(stock => {
+      expect(screen.getByText(stock.stocksymbol)).toBeInTheDocument();
+      expect(screen.getByText(stock.closingprice.toString())).toBeInTheDocument();
+      expect(screen.getByText(stock.allocation)).toBeInTheDocument();
+    });
+  });
+
+  test('navigates to stock details page on row click', () => {
+    render(
+      <Router>
+        <AllotedStockTable stocks={mockStocks} />
+      </Router>
+    );
+
+    const firstRow = screen.getByText('AAPL').closest('tr');
+    fireEvent.click(firstRow);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/stockdetails/AAPL');
+  });
+
+  test('applies dark mode styles correctly', () => {
+    useSelector.mockImplementation(callback => {
+      return callback({
+        theme: {
+          isDarkMode: true,
+        },
+      });
+    });
+
+    render(
+      <Router>
+        <AllotedStockTable stocks={mockStocks} />
+      </Router>
+    );
+
+    const container = screen.getByText('AAPL').closest('div');
+    expect(container).toHaveClass('bg-gray-700 text-white');
+  });
+});
