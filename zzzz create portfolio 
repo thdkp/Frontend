@@ -1,0 +1,184 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import CreatePortfolio from './CreatePortfolio';
+import { vi } from 'vitest';
+
+// Mock the Redux selector
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useSelector: vi.fn(),
+}));
+
+// Mock the notification functions
+vi.mock('../../notifications/notifySuccess', () => vi.fn());
+vi.mock('../../notifications/notifyError', () => vi.fn());
+
+// Mock fetch
+global.fetch = vi.fn();
+
+describe('CreatePortfolio', () => {
+  beforeEach(() => {
+    useSelector.mockImplementation(callback => callback({
+      theme: {
+        isDarkMode: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders form with correct fields', () => {
+    render(
+      <Router>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    expect(screen.getByText('Create Portfolio')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter the portfolio name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter the portfolio description')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter the capital amount')).toBeInTheDocument();
+    expect(screen.getByText('Risk Appetite (%)')).toBeInTheDocument();
+    expect(screen.getByText('Create Portfolio')).toBeInTheDocument();
+  });
+
+  test('updates form fields correctly on change', () => {
+    render(
+      <Router>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio name'), {
+      target: { value: 'My Portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio description'), {
+      target: { value: 'Description of my portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the capital amount'), {
+      target: { value: '1000' },
+    });
+    fireEvent.change(screen.getByLabelText('Risk Appetite (%)'), {
+      target: { value: '70' },
+    });
+
+    expect(screen.getByPlaceholderText('Enter the portfolio name').value).toBe('My Portfolio');
+    expect(screen.getByPlaceholderText('Enter the portfolio description').value).toBe('Description of my portfolio');
+    expect(screen.getByPlaceholderText('Enter the capital amount').value).toBe('1000');
+    expect(screen.getByLabelText('Risk Appetite (%)').value).toBe('70');
+  });
+
+  test('submits form and calls API', async () => {
+    fetch.mockResolvedValue({
+      json: () => Promise.resolve({ success: true }),
+    });
+
+    render(
+      <Router>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio name'), {
+      target: { value: 'My Portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio description'), {
+      target: { value: 'Description of my portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the capital amount'), {
+      target: { value: '1000' },
+    });
+    fireEvent.change(screen.getByLabelText('Risk Appetite (%)'), {
+      target: { value: '70' },
+    });
+
+    fireEvent.click(screen.getByText('Create Portfolio'));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(`${import.meta.env?.VITE_BACKEND_URL}/portfolio/create`, expect.any(Object));
+      expect(require('../../notifications/notifySuccess')).toHaveBeenCalledWith('Portfolio created succesfully!');
+    });
+  });
+
+  test('handles API error on form submission', async () => {
+    fetch.mockRejectedValue(new Error('Failed to create portfolio'));
+
+    render(
+      <Router>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio name'), {
+      target: { value: 'My Portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio description'), {
+      target: { value: 'Description of my portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the capital amount'), {
+      target: { value: '1000' },
+    });
+    fireEvent.change(screen.getByLabelText('Risk Appetite (%)'), {
+      target: { value: '70' },
+    });
+
+    fireEvent.click(screen.getByText('Create Portfolio'));
+
+    await waitFor(() => {
+      expect(require('../../notifications/notifyError')).toHaveBeenCalledWith('Error while creating portfolio, please try again!');
+    });
+  });
+
+  test('navigates to portfolio page on successful creation', async () => {
+    fetch.mockResolvedValue({
+      json: () => Promise.resolve({ success: true }),
+    });
+
+    render(
+      <Router>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio name'), {
+      target: { value: 'My Portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the portfolio description'), {
+      target: { value: 'Description of my portfolio' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Enter the capital amount'), {
+      target: { value: '1000' },
+    });
+    fireEvent.change(screen.getByLabelText('Risk Appetite (%)'), {
+      target: { value: '70' },
+    });
+
+    fireEvent.click(screen.getByText('Create Portfolio'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Create Portfolio')).not.toBeInTheDocument();
+      expect(screen.getByText('Please fill in the details to create your portfolio.')).not.toBeInTheDocument();
+    });
+  });
+
+  test('applies dark mode styles correctly', () => {
+    useSelector.mockImplementation(callback => callback({
+      theme: {
+        isDarkMode: true,
+      },
+    }));
+
+    render(
+      <Router>
+        <CreatePortfolio />
+      </Router>
+    );
+
+    const container = screen.getByText('Create Portfolio').closest('div');
+    expect(container).toHaveClass('bg-gray-900');
+  });
+});
