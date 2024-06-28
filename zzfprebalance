@@ -146,3 +146,167 @@ describe('RebalancePortfolio', () => {
     vi.clearAllMocks();
   });
 });
+
+
+........
+
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import configureStore from 'redux-mock-store';
+import RebalancePortfolio from './RebalancePortfolio';
+import { selectIsDarkMode } from '../../redux/slices/themeSlice';
+import { vi } from 'vitest';
+
+// Mock the necessary redux slice selector and other modules
+vi.mock('../../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+}));
+
+// Mock react-toastify
+const mockToastError = vi.fn();
+const mockToastSuccess = vi.fn();
+
+vi.mock('react-toastify', () => ({
+  toast: {
+    error: mockToastError,
+    success: mockToastSuccess,
+  },
+}));
+
+const mockStore = configureStore([]);
+
+describe('RebalancePortfolio', () => {
+  let store;
+
+  const renderComponent = (isDarkMode, initialEntries = ['/rebalance/1/medium']) => {
+    store = mockStore({
+      auth: { isAuthenticated: true },
+      theme: { isDarkMode },
+    });
+    selectIsDarkMode.mockReturnValue(isDarkMode);
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={initialEntries}>
+          <Routes>
+            <Route path="/rebalance/:portfolioId/:risk" element={<RebalancePortfolio />} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    );
+  };
+
+  test('renders the RebalancePortfolio component correctly in light mode', async () => {
+    renderComponent(false);
+
+    await waitFor(() => expect(screen.getByText('Rebalanced Portfolio')).toBeInTheDocument());
+    expect(screen.getByPlaceholderText('Search stocks...')).toBeInTheDocument();
+  });
+
+  test('renders the RebalancePortfolio component correctly in dark mode', async () => {
+    renderComponent(true);
+
+    await waitFor(() => expect(screen.getByText('Rebalanced Portfolio')).toBeInTheDocument());
+    expect(screen.getByPlaceholderText('Search stocks...')).toBeInTheDocument();
+  });
+
+  test('adds and removes stocks correctly in light mode', async () => {
+    renderComponent(false);
+
+    await waitFor(() => expect(screen.getByText('Rebalanced Portfolio')).toBeInTheDocument());
+
+    // Mock fetching stock options
+    const mockStockOptions = [
+      { value: 'AAPL', label: 'AAPL', price: 150, change: 0 },
+      { value: 'GOOGL', label: 'GOOGL', price: 2500, change: 0 },
+    ];
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ allocation: {}, capital: 10000 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockStockOptions,
+      });
+
+    fireEvent.click(screen.getByText('Add Stock'));
+    fireEvent.click(screen.getByText('AAPL'));
+    fireEvent.click(screen.getByText('Add Stock'));
+
+    await waitFor(() => expect(screen.getByText('AAPL')).toBeInTheDocument());
+
+    // Simulate removing a stock
+    fireEvent.click(screen.getByRole('button', { name: /trash/i }));
+    await waitFor(() => expect(screen.queryByText('AAPL')).not.toBeInTheDocument());
+  });
+
+  test('adds and removes stocks correctly in dark mode', async () => {
+    renderComponent(true);
+
+    await waitFor(() => expect(screen.getByText('Rebalanced Portfolio')).toBeInTheDocument());
+
+    // Mock fetching stock options
+    const mockStockOptions = [
+      { value: 'AAPL', label: 'AAPL', price: 150, change: 0 },
+      { value: 'GOOGL', label: 'GOOGL', price: 2500, change: 0 },
+    ];
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ allocation: {}, capital: 10000 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockStockOptions,
+      });
+
+    fireEvent.click(screen.getByText('Add Stock'));
+    fireEvent.click(screen.getByText('AAPL'));
+    fireEvent.click(screen.getByText('Add Stock'));
+
+    await waitFor(() => expect(screen.getByText('AAPL')).toBeInTheDocument());
+
+    // Simulate removing a stock
+    fireEvent.click(screen.getByRole('button', { name: /trash/i }));
+    await waitFor(() => expect(screen.queryByText('AAPL')).not.toBeInTheDocument());
+  });
+
+  test('handles accept and reject actions correctly in light mode', async () => {
+    renderComponent(false);
+
+    await waitFor(() => expect(screen.getByText('Rebalanced Portfolio')).toBeInTheDocument());
+
+    // Mock the accept action
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({ ok: true });
+
+    fireEvent.click(screen.getByText('Accept'));
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Portfolio saved successfully'));
+
+    // Mock the reject action
+    fireEvent.click(screen.getByText('Reject'));
+    await waitFor(() => expect(window.close).toHaveBeenCalled());
+  });
+
+  test('handles accept and reject actions correctly in dark mode', async () => {
+    renderComponent(true);
+
+    await waitFor(() => expect(screen.getByText('Rebalanced Portfolio')).toBeInTheDocument());
+
+    // Mock the accept action
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({ ok: true });
+
+    fireEvent.click(screen.getByText('Accept'));
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Portfolio saved successfully'));
+
+    // Mock the reject action
+    fireEvent.click(screen.getByText('Reject'));
+    await waitFor(() => expect(window.close).toHaveBeenCalled());
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+});
