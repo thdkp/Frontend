@@ -1,0 +1,172 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import StockComparision from './StockComparision';
+import { describe, it, expect } from 'vitest';
+
+// Mock redux store and reducers
+const mockState = {
+  theme: {
+    isDarkMode: false
+  }
+};
+
+const mockReducer = (state = mockState, action) => state;
+const store = createStore(mockReducer);
+
+// Mock fetch responses
+const mockFetchSummary = [
+  { stocksymbol: 'AAPL', price: 145.09, change: 5 },
+  { stocksymbol: 'MSFT', price: 299.79, change: 5 },
+  { stocksymbol: 'AMZN', price: 3478.05, change: 5 },
+  { stocksymbol: 'GOOGL', price: 2729.89, change: 5 },
+  { stocksymbol: 'FB', price: 355.64, change: 5 }
+];
+
+const mockFetchDetails = {
+  AAPL: {
+    stockname: 'Apple Inc.',
+    stockprice: 145.09,
+    'oneWeek': [
+      { date: '2023-06-01', price: 142 },
+      { date: '2023-06-02', price: 143 },
+      { date: '2023-06-03', price: 144 },
+      { date: '2023-06-04', price: 145 },
+      { date: '2023-06-05', price: 146 },
+      { date: '2023-06-06', price: 147 },
+      { date: '2023-06-07', price: 148 }
+    ],
+    'oneMonth': [
+      { date: '2023-05-01', price: 140 },
+      { date: '2023-05-08', price: 142 },
+      { date: '2023-05-15', price: 143 },
+      { date: '2023-05-22', price: 145 },
+      { date: '2023-05-29', price: 147 }
+    ],
+    'oneYear': [
+      { date: '2023-01-01', price: 130 },
+      { date: '2023-02-01', price: 135 },
+      { date: '2023-03-01', price: 140 },
+      { date: '2023-04-01', price: 145 },
+      { date: '2023-05-01', price: 150 },
+      { date: '2023-06-01', price: 155 }
+    ]
+  },
+  MSFT: {
+    stockname: 'MSFT',
+    stockprice: 145.09,
+
+    'oneWeek': [
+      { date: '2023-06-01', price: 160 },
+      { date: '2023-06-02', price: 163 },
+      { date: '2023-06-03', price: 164 },
+      { date: '2023-06-04', price: 145 },
+      { date: '2023-06-05', price: 136 },
+      { date: '2023-06-06', price: 147 },
+      { date: '2023-06-07', price: 118 }
+    ],
+    'oneMonth': [
+      { date: '2023-05-01', price: 140 },
+      { date: '2023-05-08', price: 142 },
+      { date: '2023-05-15', price: 143 },
+      { date: '2023-05-22', price: 145 },
+      { date: '2023-05-29', price: 147 }
+    ],
+    'oneYear': [
+      { date: '2023-01-01', price: 130 },
+      { date: '2023-02-01', price: 135 },
+      { date: '2023-03-01', price: 140 },
+      { date: '2023-04-01', price: 145 },
+      { date: '2023-05-01', price: 150 },
+      { date: '2023-06-01', price: 155 }
+    ]
+  }
+};
+
+global.fetch = (url) => {
+  if (url.includes('/home/stocks')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockFetchSummary)
+    });
+  }
+  if (url.includes('/stock')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockFetchDetails)
+    });
+  }
+  return Promise.reject('Unknown URL');
+};
+
+describe('StockComparision Component', () => {
+  it('renders without crashing', () => {
+    render(
+      <Provider store={store}>
+        <StockComparision />
+      </Provider>
+    );
+    expect(screen.getByText('Compare Stocks')).toBeInTheDocument();
+  });
+
+  it('fetches and displays stock summary', async () => {
+    render(
+      <Provider store={store}>
+        <StockComparision />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('AAPL')).toBeInTheDocument();
+    });
+
+    mockFetchSummary.forEach(stock => {
+      expect(screen.getByText(stock.stocksymbol)).toBeInTheDocument();
+    });
+  });
+
+  it('allows adding and removing stocks', async () => {
+    render(
+      <Provider store={store}>
+        <StockComparision />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      fireEvent.change(screen.getByPlaceholderText('Add Stock'), {
+        target: { value: 'AAPL' }
+      });
+      fireEvent.click(screen.getByText('AAPL'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Remove')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Remove'));
+
+    expect(screen.queryByText('Remove')).not.toBeInTheDocument();
+  });
+
+  it('changes time range and updates chart data', async () => {
+    render(
+      <Provider store={store}>
+        <StockComparision />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      fireEvent.change(screen.getByPlaceholderText('Add Stock'), {
+        target: { value: 'AAPL' }
+      });
+      fireEvent.click(screen.getByText('AAPL'));
+    });
+
+    fireEvent.click(screen.getByText('1 Month'));
+
+    await waitFor(() => {
+      expect(screen.getByText('145')).toBeInTheDocument();
+    });
+  });
+});
