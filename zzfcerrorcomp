@@ -1,0 +1,50 @@
+import React from 'react';
+import { render } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import ErrorBoundary from './ErrorBoundary'; // adjust the import path as necessary
+
+// Mock the logError function
+vi.mock('../../hooks/logError', () => ({
+  default: vi.fn(),
+}));
+
+describe('ErrorBoundary', () => {
+  it('renders children when there is no error', () => {
+    const { getByText } = render(
+      <ErrorBoundary fallback={<div>Error occurred</div>}>
+        <div>Child component</div>
+      </ErrorBoundary>
+    );
+
+    expect(getByText('Child component')).toBeTruthy();
+  });
+
+  it('renders fallback when there is an error', () => {
+    const ProblemChild = () => {
+      throw new Error('Error thrown');
+    };
+
+    const { getByText } = render(
+      <ErrorBoundary fallback={<div>Error occurred</div>}>
+        <ProblemChild />
+      </ErrorBoundary>
+    );
+
+    expect(getByText('Error occurred')).toBeTruthy();
+  });
+
+  it('calls logError when an error is caught', () => {
+    const logError = require('../../hooks/logError').default;
+    const ProblemChild = () => {
+      throw new Error('Error thrown');
+    };
+
+    render(
+      <ErrorBoundary fallback={<div>Error occurred</div>}>
+        <ProblemChild />
+      </ErrorBoundary>
+    );
+
+    expect(logError).toHaveBeenCalled();
+  });
+});
