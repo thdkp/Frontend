@@ -1,0 +1,160 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { useSelector, useDispatch } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { vi } from 'vitest';
+import { Navbar } from './Navbar';
+import { toggleTheme, selectIsDarkMode } from '../redux/slices/themeSlice';
+import { logout } from '../redux/slices/user/userSlice';
+
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useSelector: vi.fn(),
+  useDispatch: vi.fn(),
+}));
+
+vi.mock('../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+  toggleTheme: vi.fn(),
+}));
+
+vi.mock('../redux/slices/user/userSlice', () => ({
+  logout: vi.fn(),
+}));
+
+describe('Navbar', () => {
+  const mockDispatch = vi.fn();
+
+  beforeEach(() => {
+    useDispatch.mockReturnValue(mockDispatch);
+    useSelector.mockImplementation(callback =>
+      callback({
+        auth: {
+          isAuthenticated: true,
+          user: { firstName: 'John' },
+        },
+        theme: {
+          isDarkMode: false,
+        },
+      })
+    );
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders Navbar correctly', () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    expect(screen.getByText('WELLS FARGO')).toBeInTheDocument();
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio')).toBeInTheDocument();
+    expect(screen.getByText('Logout')).toBeInTheDocument();
+  });
+
+  test('toggles dark mode', () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const modeButton = screen.getByRole('button', { name: /light mode/i });
+
+    fireEvent.click(modeButton);
+
+    expect(mockDispatch).toHaveBeenCalledWith(toggleTheme());
+  });
+
+  test('opens and closes mobile menu', () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const menuButton = screen.getByRole('button', { name: /menu/i });
+
+    fireEvent.click(menuButton);
+
+    expect(screen.getByText('John')).toBeInTheDocument();
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio')).toBeInTheDocument();
+    expect(screen.getByText('Logout')).toBeInTheDocument();
+
+    const closeButton = screen.getByRole('button', { name: /close/i });
+
+    fireEvent.click(closeButton);
+
+    expect(screen.queryByText('John')).not.toBeInTheDocument();
+  });
+
+  test('handles logout', async () => {
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const logoutButton = screen.getByText('Logout');
+
+    fireEvent.click(logoutButton);
+
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(logout());
+    });
+  });
+
+  test('applies dark mode styles correctly', () => {
+    useSelector.mockImplementation(callback =>
+      callback({
+        auth: {
+          isAuthenticated: true,
+          user: { firstName: 'John' },
+        },
+        theme: {
+          isDarkMode: true,
+        },
+      })
+    );
+
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const nav = screen.getByRole('navigation');
+
+    expect(nav).toHaveClass('dark:bg-black');
+  });
+
+  test('applies light mode styles correctly', () => {
+    useSelector.mockImplementation(callback =>
+      callback({
+        auth: {
+          isAuthenticated: true,
+          user: { firstName: 'John' },
+        },
+        theme: {
+          isDarkMode: false,
+        },
+      })
+    );
+
+    render(
+      <Router>
+        <Navbar />
+      </Router>
+    );
+
+    const nav = screen.getByRole('navigation');
+
+    expect(nav).toHaveClass('bg-[#d71e28]');
+  });
+});
