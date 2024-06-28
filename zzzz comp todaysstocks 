@@ -1,4 +1,4 @@
-import React from 'react';
+useimport React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useSelector } from 'react-redux';
 import TodaysStocks from './TodaysStocks';
@@ -143,3 +143,157 @@ const dummyStocks = [
   { name: 'Adani Enterprises Ltd', symbol: 'ADANIENT', price: 3411.35, change: -6.80 },
   { name: 'NHPC Ltd', symbol: 'NHPC', price: 107.25, change: -6.14 },
 ];
+
+.........
+
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useSelector } from 'react-redux';
+import TodaysStocks from './TodaysStocks';
+import { vi } from 'vitest';
+
+// Mock the Redux selector and fetch
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useSelector: vi.fn(),
+}));
+
+vi.mock('../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+}));
+
+describe('TodaysStocks', () => {
+  const mockFetchResponse = {
+    gainers: [
+      { stockname: 'Kotak S&P BSE Sensex ETF', stocksymbol: 'SENSEX1', price: 89.00, change: 10.15 },
+      { stockname: 'Adani Total Gas Ltd', stocksymbol: 'ATGL', price: 1039.30, change: 8.80 },
+    ],
+    losers: [
+      { stockname: 'Adani Total Gas Ltd', stocksymbol: 'ATGL', price: 1039.30, change: -8.80 },
+      { stockname: 'Adani Power Ltd', stocksymbol: 'ADANIPOWER', price: 755.80, change: -8.22 },
+    ],
+    mostActive: [
+      { stockname: 'Kotak S&P BSE Sensex ETF', stocksymbol: 'SENSEX1', price: 89.00, change: 10.15 },
+      { stockname: 'Adani Total Gas Ltd', stocksymbol: 'ATGL', price: 1039.30, change: 8.80 },
+      { stockname: 'Adani Power Ltd', stocksymbol: 'ADANIPOWER', price: 755.80, change: 8.22 },
+      { stockname: 'Adani Enterprises Ltd', stocksymbol: 'ADANIENT', price: 3411.35, change: 6.80 },
+      { stockname: 'NHPC Ltd', stocksymbol: 'NHPC', price: 107.25, change: 6.14 },
+      { stockname: 'Adani Total Gas Ltd', stocksymbol: 'ATGL', price: 1039.30, change: -8.80 },
+      { stockname: 'Adani Power Ltd', stocksymbol: 'ADANIPOWER', price: 755.80, change: -8.22 },
+      { stockname: 'Adani Enterprises Ltd', stocksymbol: 'ADANIENT', price: 3411.35, change: -6.80 },
+      { stockname: 'NHPC Ltd', stocksymbol: 'NHPC', price: 107.25, change: -6.14 },
+    ],
+  };
+
+  beforeEach(() => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve(mockFetchResponse),
+      })
+    );
+    useSelector.mockImplementation(callback => callback({
+      theme: {
+        isDarkMode: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders stocks data correctly', async () => {
+    render(<TodaysStocks />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Today's stocks")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Kotak S&P BSE Sensex ETF')).toBeInTheDocument();
+    expect(screen.getByText('89.00')).toBeInTheDocument();
+    expect(screen.getByText('▲ 10.15%')).toBeInTheDocument();
+  });
+
+  test('filters stocks by gainers correctly', async () => {
+    render(<TodaysStocks />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Kotak S&P BSE Sensex ETF')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Gainers'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Kotak S&P BSE Sensex ETF')).toBeInTheDocument();
+      expect(screen.getByText('Adani Total Gas Ltd')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Adani Total Gas Ltd', { exact: false })).toBeInTheDocument();
+  });
+
+  test('filters stocks by losers correctly', async () => {
+    render(<TodaysStocks />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Kotak S&P BSE Sensex ETF')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Losers'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Adani Total Gas Ltd')).toBeInTheDocument();
+      expect(screen.getByText('Adani Power Ltd')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Adani Total Gas Ltd', { exact: false })).toBeInTheDocument();
+  });
+
+  test('filters stocks by most active correctly', async () => {
+    render(<TodaysStocks />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Kotak S&P BSE Sensex ETF')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Most Active'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Kotak S&P BSE Sensex ETF')).toBeInTheDocument();
+      expect(screen.getByText('Adani Total Gas Ltd')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Adani Total Gas Ltd', { exact: false })).toBeInTheDocument();
+  });
+
+  test('applies dark mode styles correctly', async () => {
+    useSelector.mockImplementation(callback => callback({
+      theme: {
+        isDarkMode: true,
+      },
+    }));
+
+    render(<TodaysStocks />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Today's stocks")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Today's stocks").parentElement).toHaveClass('bg-gray-800');
+  });
+
+  test('applies light mode styles correctly', async () => {
+    useSelector.mockImplementation(callback => callback({
+      theme: {
+        isDarkMode: false,
+      },
+    }));
+
+    render(<TodaysStocks />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Today's stocks")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Today's stocks").parentElement).toHaveClass('bg-white');
+  });
+});
