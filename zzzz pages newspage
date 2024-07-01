@@ -1,0 +1,128 @@
+import React from 'react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { BrowserRouter as Router, MemoryRouter } from 'react-router-dom';
+import { createStore } from 'redux';
+import NewsPage from './NewsPage'; // Adjust the path as necessary
+import { vi } from 'vitest';
+
+// Mock fetch
+vi.stubGlobal('fetch', vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve(DUMMY_NEWS_DATA),
+  })
+));
+
+const DUMMY_NEWS_DATA = [
+  {
+    id: 1,
+    stocksymbol: 'AAPL',
+    headline: 'Apple releases new iPhone',
+    description: 'Apple has released the new iPhone 13 with advanced features.',
+    affectStock: true,
+    createdAt: '2024-06-10T10:00:00Z',
+  },
+  {
+    id: 2,
+    stocksymbol: 'TSLA',
+    headline: 'Tesla hits new production milestone',
+    description: 'Tesla has produced its millionth electric vehicle.',
+    affectStock: true,
+    createdAt: '2024-06-11T11:00:00Z',
+  },
+  {
+    id: 3,
+    stocksymbol: 'AMZN',
+    headline: 'Amazon launches new delivery drone',
+    description: 'Amazon has launched a new drone delivery service.',
+    affectStock: false,
+    createdAt: '2024-06-12T12:00:00Z',
+  },
+  // Add more dummy news data as needed
+];
+
+const renderWithProviders = (ui, { reduxState } = {}) => {
+  const store = createStore(() => reduxState || { theme: { isDarkMode: false }, auth: { isAuthenticated: true, user: { name: 'John Doe' } } });
+  return render(
+    <Provider store={store}>
+      <Router>{ui}</Router>
+    </Provider>
+  );
+};
+
+describe('NewsPage component', () => {
+  test('renders NewsPage component with news data', async () => {
+    renderWithProviders(<NewsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple releases new iPhone/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tesla hits new production milestone/i)).toBeInTheDocument();
+    });
+  });
+
+  test('renders NewsPage component in dark mode', async () => {
+    renderWithProviders(<NewsPage />, {
+      reduxState: { theme: { isDarkMode: true } },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple releases new iPhone/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/News/i)).toHaveClass('text-white');
+  });
+
+  test('renders NewsPage component in light mode', async () => {
+    renderWithProviders(<NewsPage />, {
+      reduxState: { theme: { isDarkMode: false } },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple releases new iPhone/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/News/i)).toHaveClass('text-black');
+  });
+
+  test('pagination works correctly', async () => {
+    renderWithProviders(<NewsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple releases new iPhone/i)).toBeInTheDocument();
+    });
+
+    // Simulate clicking the next button
+    fireEvent.click(screen.getByText(/Next/i));
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Apple releases new iPhone/i)).not.toBeInTheDocument();
+    });
+
+    // Simulate clicking the previous button
+    fireEvent.click(screen.getByText(/Previous/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple releases new iPhone/i)).toBeInTheDocument();
+    });
+  });
+
+  test('disables previous button on first page and next button on last page', async () => {
+    renderWithProviders(<NewsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple releases new iPhone/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Previous/i)).toBeDisabled();
+
+    // Simulate clicking the next button until the last page
+    fireEvent.click(screen.getByText(/Next/i));
+    fireEvent.click(screen.getByText(/Next/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Amazon launches new delivery drone/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Next/i)).toBeDisabled();
+  });
+});
