@@ -1,0 +1,199 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useDispatch, useSelector } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { vi } from 'vitest';
+import SignIn from './SignIn';
+import { login } from '../redux/slices/user/userSlice';
+import { selectIsDarkMode } from '../redux/slices/themeSlice';
+import notifySuccess from '../../notifications/notifySuccess';
+import notifyError from '../../notifications/notifyError';
+
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useDispatch: vi.fn(),
+  useSelector: vi.fn(),
+}));
+
+vi.mock('../redux/slices/user/userSlice', () => ({
+  login: vi.fn(),
+}));
+
+vi.mock('../redux/slices/themeSlice', () => ({
+  selectIsDarkMode: vi.fn(),
+}));
+
+vi.mock('../../notifications/notifySuccess', () => ({
+  default: vi.fn(),
+}));
+
+vi.mock('../../notifications/notifyError', () => ({
+  default: vi.fn(),
+}));
+
+describe('SignIn', () => {
+  const mockDispatch = vi.fn();
+
+  beforeEach(() => {
+    useDispatch.mockReturnValue(mockDispatch);
+    useSelector.mockImplementation(callback =>
+      callback({
+        theme: {
+          isDarkMode: false,
+        },
+      })
+    );
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders SignIn component correctly', () => {
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByText("Don't have an account?")).toBeInTheDocument();
+  });
+
+  test('toggles password visibility', () => {
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    const passwordInput = screen.getByLabelText('Password');
+    const toggleButton = screen.getByRole('button', { name: /eye/i });
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(toggleButton);
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(toggleButton);
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  test('validates form inputs', () => {
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    const emailInput = screen.getByLabelText('Email');
+    const passwordInput = screen.getByLabelText('Password');
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'invalidemail' } });
+    fireEvent.change(passwordInput, { target: { value: '' } });
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText('Email address is invalid')).toBeInTheDocument();
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
+  });
+
+  test('handles successful login', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({ isAdmin: false }),
+        headers: {
+          get: () => 'mockToken',
+        },
+      })
+    );
+
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    const emailInput = screen.getByLabelText('Email');
+    const passwordInput = screen.getByLabelText('Password');
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(notifySuccess).toHaveBeenCalledWith('Signed in successfully!');
+      expect(mockDispatch).toHaveBeenCalledWith(login(expect.any(Object)));
+    });
+
+    expect(sessionStorage.setItem).toHaveBeenCalledWith('accessToken', 'mockToken');
+  });
+
+  test('handles login error', async () => {
+    global.fetch = vi.fn(() => Promise.resolve({ status: 401 }));
+
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    const emailInput = screen.getByLabelText('Email');
+    const passwordInput = screen.getByLabelText('Password');
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(notifyError).toHaveBeenCalledWith('wrong credentials');
+    });
+  });
+
+  test('applies dark mode styles correctly', () => {
+    useSelector.mockImplementation(callback =>
+      callback({
+        theme: {
+          isDarkMode: true,
+        },
+      })
+    );
+
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    const container = screen.getByRole('main');
+
+    expect(container).toHaveClass('bg-black');
+  });
+
+  test('applies light mode styles correctly', () => {
+    useSelector.mockImplementation(callback =>
+      callback({
+        theme: {
+          isDarkMode: false,
+        },
+      })
+    );
+
+    render(
+      <Router>
+        <SignIn />
+      </Router>
+    );
+
+    const container = screen.getByRole('main');
+
+    expect(container).toHaveClass('bg-gray-100');
+  });
+});
