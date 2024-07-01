@@ -1,0 +1,69 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import GetStarted from './GetStarted'; // Adjust the path as necessary
+import { selectIsDarkMode } from '../../redux/slices/themeSlice';
+import { vi } from 'vitest';
+
+const renderWithProviders = (ui, { reduxState } = {}) => {
+  const store = createStore(() => reduxState || { theme: { isDarkMode: false } });
+  return render(
+    <Provider store={store}>
+      <Router>{ui}</Router>
+    </Provider>
+  );
+};
+
+describe('GetStarted component', () => {
+  test('renders GetStarted component', () => {
+    renderWithProviders(<GetStarted />);
+    expect(screen.getByText(/Get started/i)).toBeInTheDocument();
+    expect(screen.getByText(/Track your portfolio/i)).toBeInTheDocument();
+    expect(screen.getByText(/Have all your portfolios in one place!/i)).toBeInTheDocument();
+  });
+
+  test('renders dark mode correctly', () => {
+    renderWithProviders(<GetStarted />, {
+      reduxState: { theme: { isDarkMode: true } },
+    });
+
+    expect(screen.getByText(/Get started/i)).toHaveClass('text-white');
+    expect(screen.getByText(/Track your portfolio/i)).toHaveClass('text-white');
+    expect(screen.getByText(/Have all your portfolios in one place!/i)).toHaveClass('text-gray-300');
+    expect(screen.getByRole('button', { name: /Start/i })).toHaveClass('bg-black text-white');
+  });
+
+  test('renders light mode correctly', () => {
+    renderWithProviders(<GetStarted />, {
+      reduxState: { theme: { isDarkMode: false } },
+    });
+
+    expect(screen.getByText(/Get started/i)).toHaveClass('text-black');
+    expect(screen.getByText(/Track your portfolio/i)).toHaveClass('text-black');
+    expect(screen.getByText(/Have all your portfolios in one place!/i)).toHaveClass('text-gray-600');
+    expect(screen.getByRole('button', { name: /Start/i })).toHaveClass('bg-black text-white');
+  });
+
+  test('renders list items correctly', () => {
+    renderWithProviders(<GetStarted />);
+
+    const listItems = [
+      'Create custom portfolios in a few clicks',
+      'Use multiple visualization tools to get a better understanding of your portfolios',
+      'Rebalance your portfolios on a single click',
+    ];
+
+    listItems.forEach((item) => {
+      expect(screen.getByText(item)).toBeInTheDocument();
+    });
+  });
+
+  test('renders start button correctly', () => {
+    renderWithProviders(<GetStarted />);
+
+    const startButton = screen.getByRole('button', { name: /Start/i });
+    expect(startButton).toBeInTheDocument();
+  });
+});
