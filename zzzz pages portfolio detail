@@ -1,0 +1,111 @@
+import React from 'react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { createStore } from 'redux';
+import PortfolioDetail from './PortfolioDetail'; // Adjust the path as necessary
+import { vi } from 'vitest';
+
+// Mock fetch
+vi.stubGlobal('fetch', vi.fn((url) =>
+  Promise.resolve({
+    json: () => {
+      if (url.includes('/portfolio/get')) {
+        return Promise.resolve(dummyData);
+      }
+      return Promise.resolve({});
+    },
+  })
+));
+
+const dummyData = [
+  {
+    portfolioid: 1,
+    name: 'Tech Stocks',
+    value: 10000,
+    stocks: [{ stockSymbol: 'AAPL', quantity: 10 }],
+    profitLoss: 5000,
+    capital: 5000,
+    worth: 15000,
+    allocation: { 'Tech Stocks': 10000 },
+  },
+];
+
+const renderWithProviders = (ui, { reduxState } = {}) => {
+  const store = createStore(() => reduxState || { theme: { isDarkMode: false }, auth: { isAuthenticated: true, user: { name: 'John Doe' } } });
+  return render(
+    <Provider store={store}>
+      <Router>{ui}</Router>
+    </Provider>
+  );
+};
+
+describe('PortfolioDetail component', () => {
+  test('renders PortfolioDetail component for authenticated user', async () => {
+    renderWithProviders(<PortfolioDetail />, {
+      reduxState: { auth: { isAuthenticated: true } },
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText(/Tech Stocks/i)).toBeInTheDocument();
+      expect(screen.getByText(/Stocks in Tech Stocks/i)).toBeInTheDocument();
+    });
+  });
+
+  test('displays AuthError for unauthenticated user', () => {
+    renderWithProviders(<PortfolioDetail />, {
+      reduxState: { auth: { isAuthenticated: false } },
+    });
+    
+    expect(screen.getByText(/You are not authorized to view this page/i)).toBeInTheDocument();
+  });
+
+  test('renders PortfolioDetail component in dark mode', async () => {
+    renderWithProviders(<PortfolioDetail />, {
+      reduxState: { theme: { isDarkMode: true }, auth: { isAuthenticated: true } },
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText(/Tech Stocks/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('portfolio-container')).toHaveClass('bg-gray-800');
+  });
+
+  test('renders PortfolioDetail component in light mode', async () => {
+    renderWithProviders(<PortfolioDetail />, {
+      reduxState: { theme: { isDarkMode: false }, auth: { isAuthenticated: true } },
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText(/Tech Stocks/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('portfolio-container')).toHaveClass('bg-white');
+  });
+
+  test('renders PortfolioDiversity component when a portfolio is loaded', async () => {
+    renderWithProviders(<PortfolioDetail />, {
+      reduxState: { auth: { isAuthenticated: true } },
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText(/Diversity Details for Tech Stocks/i)).toBeInTheDocument();
+    });
+  });
+
+  test('handles stock click navigation', async () => {
+    renderWithProviders(<PortfolioDetail />, {
+      reduxState: { auth: { isAuthenticated: true } },
+    });
+    
+    await waitFor(() => {
+      const stockElement = screen.getByText(/AAPL/i);
+      fireEvent.click(stockElement);
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
+    });
+  });
+});
