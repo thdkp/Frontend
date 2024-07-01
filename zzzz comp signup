@@ -1,0 +1,115 @@
+import React from 'react';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import SignUp from './SignUp'; // Adjust the path as necessary
+import { notifySuccess, notifyError } from '../../notifications/notifySuccess';
+import { selectIsDarkMode } from '../../redux/slices/themeSlice';
+import { vi } from 'vitest';
+
+vi.mock('../../notifications/notifySuccess');
+vi.mock('../../notifications/notifyError');
+
+const renderWithProviders = (ui, { reduxState } = {}) => {
+  const store = createStore(() => reduxState || { theme: { isDarkMode: false } });
+  return render(
+    <Provider store={store}>
+      <Router>{ui}</Router>
+    </Provider>
+  );
+};
+
+describe('SignUp component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders SignUp component', () => {
+    renderWithProviders(<SignUp />);
+    expect(screen.getByText(/Create Account/i)).toBeInTheDocument();
+  });
+
+  test('toggles password visibility', () => {
+    renderWithProviders(<SignUp />);
+    const passwordInput = screen.getByPlaceholderText('Enter your password');
+    const toggleButton = screen.getByRole('button', { name: /eye/i });
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+    fireEvent.click(toggleButton);
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    fireEvent.click(toggleButton);
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  test('validates form fields on blur', () => {
+    renderWithProviders(<SignUp />);
+
+    const firstNameInput = screen.getByPlaceholderText('Enter your first name');
+    fireEvent.blur(firstNameInput);
+    expect(screen.getByText('First name is required')).toBeInTheDocument();
+
+    const lastNameInput = screen.getByPlaceholderText('Enter your last name');
+    fireEvent.blur(lastNameInput);
+    expect(screen.getByText('Last name is required')).toBeInTheDocument();
+
+    const dobInput = screen.getByPlaceholderText('Enter your date of birth');
+    fireEvent.blur(dobInput);
+    expect(screen.getByText('Date of birth is required')).toBeInTheDocument();
+
+    const emailInput = screen.getByPlaceholderText('Enter your email');
+    fireEvent.blur(emailInput);
+    expect(screen.getByText('Email is required')).toBeInTheDocument();
+
+    const passwordInput = screen.getByPlaceholderText('Enter your password');
+    fireEvent.blur(passwordInput);
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
+  });
+
+  test('submits form with valid data', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({}),
+      })
+    );
+
+    renderWithProviders(<SignUp />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter your first name'), { target: { value: 'John' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your last name'), { target: { value: 'Doe' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your date of birth'), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your email'), { target: { value: 'john.doe@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your password'), { target: { value: 'Password1!' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Sign up/i }));
+
+    await waitFor(() => {
+      expect(notifySuccess).toHaveBeenCalledWith('Profile Created successfully, Signin to continue!');
+    });
+
+    global.fetch.mockRestore();
+  });
+
+  test('handles form submission errors', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.reject(new Error('Network error'))
+    );
+
+    renderWithProviders(<SignUp />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter your first name'), { target: { value: 'John' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your last name'), { target: { value: 'Doe' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your date of birth'), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your email'), { target: { value: 'john.doe@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your password'), { target: { value: 'Password1!' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Sign up/i }));
+
+    await waitFor(() => {
+      expect(notifyError).toHaveBeenCalledWith('Error while creating your profile, please retry!');
+    });
+
+    global.fetch.mockRestore();
+  });
+});
