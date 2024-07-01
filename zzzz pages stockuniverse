@@ -1,0 +1,96 @@
+import React from 'react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { BrowserRouter as Router, MemoryRouter } from 'react-router-dom';
+import { createStore } from 'redux';
+import StockUniverse from './StockUniverse'; // Adjust the path as necessary
+import { vi } from 'vitest';
+
+// Mock fetch
+vi.stubGlobal('fetch', vi.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve(dummyStockData),
+  })
+));
+
+const dummyStockData = [
+  { stockname: 'Apple Inc.', stocksymbol: 'AAPL', value: 145.09 },
+  { stockname: 'Microsoft Corp.', stocksymbol: 'MSFT', value: 299.79 },
+  { stockname: 'Amazon.com Inc.', stocksymbol: 'AMZN', value: 3478.05 },
+  { stockname: 'Google LLC', stocksymbol: 'GOOGL', value: 2729.89 },
+  { stockname: 'Facebook Inc.', stocksymbol: 'FB', value: 355.64 },
+];
+
+const renderWithProviders = (ui, { reduxState } = {}) => {
+  const store = createStore(() => reduxState || { theme: { isDarkMode: false }, auth: { isAuthenticated: true, user: { name: 'John Doe' } } });
+  return render(
+    <Provider store={store}>
+      <Router>{ui}</Router>
+    </Provider>
+  );
+};
+
+describe('StockUniverse component', () => {
+  test('renders StockUniverse component with stock data', async () => {
+    renderWithProviders(<StockUniverse />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple Inc./i)).toBeInTheDocument();
+      expect(screen.getByText(/Microsoft Corp./i)).toBeInTheDocument();
+    });
+  });
+
+  test('renders StockUniverse component in dark mode', async () => {
+    renderWithProviders(<StockUniverse />, {
+      reduxState: { theme: { isDarkMode: true } },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple Inc./i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Universe of Stocks/i)).toHaveClass('text-white');
+  });
+
+  test('renders StockUniverse component in light mode', async () => {
+    renderWithProviders(<StockUniverse />, {
+      reduxState: { theme: { isDarkMode: false } },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apple Inc./i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Universe of Stocks/i)).toHaveClass('text-black');
+  });
+
+  test('navigates to stock details on row click', async () => {
+    const navigate = vi.fn();
+    renderWithProviders(
+      <MemoryRouter initialEntries={['/']}>
+        <StockUniverse />
+      </MemoryRouter>,
+      { reduxState: { auth: { isAuthenticated: true } } }
+    );
+
+    await waitFor(() => {
+      const row = screen.getByText(/AAPL/i).closest('tr');
+      fireEvent.click(row);
+    });
+
+    expect(navigate).toHaveBeenCalledWith('/stockdetails/AAPL');
+  });
+
+  test('filters stocks based on search input', async () => {
+    renderWithProviders(<StockUniverse />);
+
+    await waitFor(() => {
+      fireEvent.change(screen.getByPlaceholderText(/Search stocks.../i), {
+        target: { value: 'Apple' },
+      });
+
+      expect(screen.getByText(/Apple Inc./i)).toBeInTheDocument();
+      expect(screen.queryByText(/Microsoft Corp./i)).not.toBeInTheDocument();
+    });
+  });
+});
