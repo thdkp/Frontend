@@ -1,0 +1,192 @@
+import React from 'react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { Provider, useSelector } from 'react-redux';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { createStore } from 'redux';
+import { vi } from 'vitest';
+import RebalancePortfolio from './RebalancePortfolio';
+
+vi.mock('react-router-dom', () => ({
+  ...vi.importActual('react-router-dom'),
+  useNavigate: vi.fn(),
+  useParams: () => ({ portfolioId: '123', risk: 'medium' }),
+}));
+
+vi.mock('react-redux', () => ({
+  ...vi.importActual('react-redux'),
+  useSelector: vi.fn(),
+}));
+
+vi.mock('react-select', () => ({
+  ...vi.importActual('react-select'),
+  default: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock('react-toastify', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+const DUMMY_DATA = [
+  { stockSymbol: 'AAPL', stockPricePerUnit: 113.79, allocationPercent: 5, capitalInvested: 50, oldAllocationShares: 0, newAllocationShares: 0.44, changeInUnits: 0.44 },
+  { stockSymbol: 'GOOGL', stockPricePerUnit: 113.79, allocationPercent: 5, capitalInvested: 50, oldAllocationShares: 0, newAllocationShares: 0.44, changeInUnits: 0.44 },
+];
+
+const mockFetch = vi.fn((url) => {
+  if (url.includes('/neural/predict/')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({
+        capital: 1000,
+        allocation: {
+          AAPL: { oldAllocationShares: 0, newAllocationPercent: 5, price: 113.79 },
+          GOOGL: { oldAllocationShares: 0, newAllocationPercent: 5, price: 113.79 },
+        },
+      }),
+    });
+  } else if (url.includes('/home/stocks')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve([
+        { stocksymbol: 'AAPL', price: 113.79, change: 0 },
+        { stocksymbol: 'GOOGL', price: 113.79, change: 0 },
+      ]),
+    });
+  }
+  return Promise.reject('Unknown API endpoint');
+});
+
+vi.stubGlobal('fetch', mockFetch);
+
+const renderWithProviders = (ui, { reduxState } = {}) => {
+  const store = createStore(() => reduxState || { theme: { isDarkMode: false }, auth: { isAuthenticated: true, user: { name: 'John Doe' } } });
+  return render(
+    <Provider store={store}>
+      <Router>{ui}</Router>
+    </Provider>
+  );
+};
+
+describe('RebalancePortfolio component', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    useSelector.mockImplementation((selector) => {
+      if (selector === selectIsDarkMode) {
+        return false; // Default to light mode
+      }
+      return null;
+    });
+  });
+
+  test('renders RebalancePortfolio component and fetches data', async () => {
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+      expect(screen.getByText(/Invested Portfolio Amount/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/AAPL/i)).toBeInTheDocument();
+    expect(screen.getByText(/GOOGL/i)).toBeInTheDocument();
+  });
+
+  test('renders in dark mode', async () => {
+    useSelector.mockImplementation((selector) => {
+      if (selector === selectIsDarkMode) {
+        return true; // Set to dark mode
+      }
+      return null;
+    });
+
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Rebalanced Portfolio/i)).toHaveClass('text-white');
+  });
+
+  test('handles fetch error and uses dummy data', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.reject('API is down'));
+
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+      expect(screen.getByText(/AAPL/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Error fetching data, displaying dummy data instead./i)).toBeInTheDocument();
+  });
+
+  test('adds a stock', async () => {
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/Select stock to add/i), { target: { value: 'AAPL' } });
+    fireEvent.click(screen.getByText(/Add Stock/i));
+
+    expect(screen.getByText(/AAPL/i)).toBeInTheDocument();
+  });
+
+  test('updates allocation percentage', async () => {
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+    });
+
+    const input = screen.getAllByRole('spinbutton')[0];
+    fireEvent.change(input, { target: { value: '10' } });
+
+    expect(input.value).toBe('10');
+  });
+
+  test('deletes a stock', async () => {
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/AAPL/i)).not.toBeInTheDocument();
+    });
+  });
+
+  test('handles Accept button click', async () => {
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/Accept/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Portfolio saved successfully/i)).toBeInTheDocument();
+    });
+  });
+
+  test('handles Reject button click', async () => {
+    renderWithProviders(<RebalancePortfolio />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rebalanced Portfolio/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/Reject/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Portfolio rebalanced/i)).toBeInTheDocument();
+    });
+  });
+});
